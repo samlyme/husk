@@ -7,13 +7,35 @@ import GHC.Natural (Natural)
 -- This data type exists because there are times where
 -- we can pass either an html structure or an escaped string.
 -- eg. <p> <em> bold </em> </p>
-data Html = Structure Element | Text EscapedString
+newtype Html = Html String
 
-newtype Element = Element String
+instance Show Html where
+  show :: Html -> String
+  show (Html s) = s
 
-newtype EscapedString = EscapedString String
+instance Semigroup Html where
+  (<>) :: Html -> Html -> Html
+  (<>) a b = Html (show a <> show b)
+
+type EscapedString = Html
 
 newtype Attribute = Attribute String
+
+-- ultra cursed
+html_ :: String -> Html -> Html
+html_ title content =
+  Html (ot "!DOCTYPE html")
+    <> ela
+      "html"
+      [attr "lang" "en"]
+      ( el
+          "head"
+          ( iela "meta" [attr "charset" "UTF-8"]
+              <> iela "meta" [attr "name" "viewport", attr "content" "width=device-width, initial-scale=1.0"]
+              <> el "title" (escape title)
+          )
+          <> el "body" content
+      )
 
 h_ :: Natural -> Html -> Html
 h_ n = el ("h" <> show n)
@@ -37,6 +59,11 @@ bi_ = strong_ . em_
 code_ :: Html -> Html
 code_ = el "code"
 
+-- These will be highlighted
+codeBlock_ :: String -> EscapedString -> Html
+codeBlock_ lang content =
+  el "pre" (ela "code" [attr "class" ("language-" <> lang)] content)
+
 quote_ :: Html -> Html
 quote_ = ela "div" [attr "class" "quote"]
 
@@ -51,26 +78,24 @@ li_ = el "li"
 
 el :: String -> Html -> Html
 el tag content =
-  Structure (Element (ot tag <> getHtmlString content <> ct tag))
+  Html (ot tag <> show content <> ct tag)
 
 ela :: String -> [Attribute] -> Html -> Html
 ela tag attributes content =
-  Structure
-    ( Element
-        ( ota tag attributes
-            <> getHtmlString content
-            <> ct tag
-        )
+  Html
+    ( ota tag attributes
+        <> show content
+        <> ct tag
     )
 
 -- Inline element
 iel :: String -> Html
-iel tag = Structure (Element ("<" <> tag <> " />"))
+iel tag = Html ("<" <> tag <> " />")
 
 -- Inline element with attributes. Maybe fix with monads or whatever in future
 iela :: String -> [Attribute] -> Html
 iela tag attributes =
-  Structure (Element ("<" <> tag <> getAttributesString attributes <> " />"))
+  Html ("<" <> tag <> getAttributesString attributes <> " />")
 
 ota :: String -> [Attribute] -> String
 ota tag attributes = "<" <> tag <> getAttributesString attributes <> ">"
@@ -85,18 +110,13 @@ attr :: String -> String -> Attribute
 attr a s = Attribute (a <> "=\"" <> s <> "\"")
 
 concatHtml :: [Html] -> Html
-concatHtml = Structure . Element . concatMap getHtmlString
-
-getHtmlString :: Html -> String
-getHtmlString content = case content of
-  (Text s) -> (\(EscapedString e) -> e) s
-  (Structure s) -> (\(Element e) -> e) s
+concatHtml = Html . concatMap show
 
 getAttributesString :: [Attribute] -> String
 getAttributesString attributes = ' ' : unwords (map (\(Attribute x) -> x) attributes)
 
 -- This is the only way to create an EscapedString
-escape :: String -> EscapedString
+escape :: String -> Html
 escape =
   let escapeChar c =
         case c of
@@ -106,6 +126,6 @@ escape =
           '"' -> "&quot;"
           '\'' -> "&#39;"
           _ -> [c]
-   in EscapedString . concatMap escapeChar
+   in Html . concatMap escapeChar
 
 type Title = String

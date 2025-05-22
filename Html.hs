@@ -1,7 +1,6 @@
 module Html
   ( Html,
     Title,
-    Structure,
     Attribute,
     html_,
     h_,
@@ -9,11 +8,14 @@ module Html
     br_,
     strong_,
     em_,
-    quote_,
-    ul_,
-    ol_,
+    bi_,
     code_,
-    render,
+    codeBlock_,
+    quote_,
+    ol_,
+    ul_,
+    attr,
+    escape,
   )
 where
 
