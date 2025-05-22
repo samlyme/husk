@@ -4,15 +4,22 @@ module Html.Internal where
 
 import GHC.Num (Natural)
 
-newtype Html = Html String
+-- This data type exists because there are times where
+-- we can pass either an html structure or an escaped string.
+-- eg. <p> <em> bold </em> </p>
+data Html = Elements Structure | Text String
 
 newtype Structure = Structure String
 
+newtype Attribute = Attribute String
+
 type Title = String
 
+-- This function is just cursed.
+-- It is meant to create an html template
 html_ :: String -> Structure -> Html
 html_ title content =
-  Html
+  Text
     ( el
         "html"
         ( el "head" (el "title" (escape title))
@@ -20,7 +27,7 @@ html_ title content =
         )
     )
 
-h_ :: Natural -> String -> Structure
+h_ :: Natural -> Html -> Structure
 h_ n = Structure . el ("h" <> show n) . escape
 
 p_ :: String -> Structure
@@ -51,12 +58,35 @@ ul_ =
 code_ :: [Char] -> Structure
 code_ = Structure . el "code" . escape
 
+-- img_ :: String -> String -> Structure
+
 -- internal
 div_ :: String -> Structure -> String
-div_ c (Structure content) = "<div class=\"" <> c <> "\">" <> content <> "</div>"
+div_ c = ela "div" [attr "class" c]
 
 el :: String -> String -> String
 el tag content = "<" <> tag <> ">" <> content <> "</" <> tag <> ">"
+
+ela :: String -> [Attribute] -> Structure -> String
+ela tag attrs content =
+  case attrs of
+    [] -> el tag (getStructureString content)
+    _ ->
+      "<"
+        <> tag
+        <> " "
+        <> unwords (map getAttributeString attrs)
+        <> ">"
+        <> getStructureString content
+        <> "</"
+        <> tag
+        <> ">"
+
+getAttributeString :: Attribute -> String
+getAttributeString (Attribute s) = s
+
+attr :: String -> String -> Attribute
+attr a s = Attribute (a <> "=\"" <> s <> "\"")
 
 -- If you squint, (Structure str) is how we create a variable of type Structure
 -- Since everything is functional, having this definition in the args
@@ -64,6 +94,8 @@ el tag content = "<" <> tag <> ">" <> content <> "</" <> tag <> ">"
 getStructureString :: Structure -> String
 getStructureString (Structure str) = str
 
+-- I feel like escaping should not be the responsibility of
+--  the html library
 escape :: [Char] -> [Char]
 escape =
   let escapeChar c =
@@ -82,4 +114,7 @@ instance Semigroup Structure where
     Structure (getStructureString a <> getStructureString b)
 
 render :: Html -> String
-render (Html a) = a
+render a =
+  case a of
+    (Text t) -> t
+    (Elements e) -> getStructureString e
