@@ -2,101 +2,124 @@
 
 module Html.Internal where
 
-import GHC.Num (Natural)
+import GHC.Natural (Natural)
 
 -- This data type exists because there are times where
 -- we can pass either an html structure or an escaped string.
 -- eg. <p> <em> bold </em> </p>
-data Html = Elements Structure | Text String
+newtype Html = Html String
 
-newtype Structure = Structure String
+instance Show Html where
+  show :: Html -> String
+  show (Html s) = s
+
+instance Semigroup Html where
+  (<>) :: Html -> Html -> Html
+  (<>) a b = Html (show a <> show b)
+
+type EscapedString = Html
 
 newtype Attribute = Attribute String
 
-type Title = String
-
--- This function is just cursed.
--- It is meant to create an html template
-html_ :: String -> Structure -> Html
+-- ultra cursed
+html_ :: String -> Html -> Html
 html_ title content =
-  Text
-    ( el
-        "html"
-        ( el "head" (el "title" (escape title))
-            <> el "body" (getStructureString content)
-        )
+  Html (ot "!DOCTYPE html")
+    <> ela
+      "html"
+      [attr "lang" "en"]
+      ( el
+          "head"
+          ( el "title" (escape title)
+              <> iela "meta" [attr "charset" "UTF-8"]
+              <> iela "meta" [attr "name" "viewport", attr "content" "width=device-width, initial-scale=1.0"]
+              <> iela "link" [attr "rel" "stylesheet", attr "href" "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css"]
+              <> iela "script" [attr "src" "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"]
+              <> el "script" (Html "hljs.highlightAll();")
+          )
+          <> el "body" content
+      )
+
+h_ :: Natural -> Html -> Html
+h_ n = el ("h" <> show n)
+
+p_ :: Html -> Html
+p_ = el "p"
+
+br_ :: Html
+br_ = iel "br"
+
+strong_ :: Html -> Html
+strong_ = el "strong"
+
+em_ :: Html -> Html
+em_ = el "em"
+
+-- bold italic
+bi_ :: Html -> Html
+bi_ = strong_ . em_
+
+code_ :: Html -> Html
+code_ = el "code"
+
+-- These will be highlighted
+codeBlock_ :: String -> EscapedString -> Html
+codeBlock_ lang content =
+  el "pre" (ela "code" [attr "class" ("language-" <> lang)] content)
+
+quote_ :: Html -> Html
+quote_ = ela "div" [attr "class" "quote"]
+
+ol_ :: [Html] -> Html
+ol_ items = el "ol" (concatHtml (map li_ items))
+
+ul_ :: [Html] -> Html
+ul_ items = el "ul" (concatHtml (map li_ items))
+
+li_ :: Html -> Html
+li_ = el "li"
+
+el :: String -> Html -> Html
+el tag content =
+  Html (ot tag <> show content <> ct tag)
+
+ela :: String -> [Attribute] -> Html -> Html
+ela tag attributes content =
+  Html
+    ( ota tag attributes
+        <> show content
+        <> ct tag
     )
 
-h_ :: Natural -> Html -> Structure
-h_ n = Structure . el ("h" <> show n) . escape
+-- Inline element
+iel :: String -> Html
+iel tag = Html ("<" <> tag <> " />")
 
-p_ :: String -> Structure
-p_ = Structure . el "p" . escape
+-- Inline element with attributes. Maybe fix with monads or whatever in future
+iela :: String -> [Attribute] -> Html
+iela tag attributes =
+  Html ("<" <> tag <> getAttributesString attributes <> " />")
 
-br_ :: Structure
-br_ = Structure "<br>"
+ota :: String -> [Attribute] -> String
+ota tag attributes = "<" <> tag <> getAttributesString attributes <> ">"
 
-strong_ :: String -> Structure
-strong_ = Structure . el "strong" . escape
+ot :: String -> String
+ot tag = "<" <> tag <> ">"
 
-em_ :: String -> Structure
-em_ = Structure . el "em" . escape
-
-quote_ :: Structure -> Structure
-quote_ = Structure . div_ "quote"
-
-ol_ :: [Structure] -> Structure
-ol_ =
-  let li_ = el "li"
-   in Structure . el "ol" . concatMap (li_ . getStructureString)
-
-ul_ :: [Structure] -> Structure
-ul_ =
-  let li_ = el "li"
-   in Structure . el "ul" . concatMap (li_ . getStructureString)
-
-code_ :: [Char] -> Structure
-code_ = Structure . el "code" . escape
-
--- img_ :: String -> String -> Structure
-
--- internal
-div_ :: String -> Structure -> String
-div_ c = ela "div" [attr "class" c]
-
-el :: String -> String -> String
-el tag content = "<" <> tag <> ">" <> content <> "</" <> tag <> ">"
-
-ela :: String -> [Attribute] -> Structure -> String
-ela tag attrs content =
-  case attrs of
-    [] -> el tag (getStructureString content)
-    _ ->
-      "<"
-        <> tag
-        <> " "
-        <> unwords (map getAttributeString attrs)
-        <> ">"
-        <> getStructureString content
-        <> "</"
-        <> tag
-        <> ">"
-
-getAttributeString :: Attribute -> String
-getAttributeString (Attribute s) = s
+ct :: String -> String
+ct tag = "</" <> tag <> ">"
 
 attr :: String -> String -> Attribute
 attr a s = Attribute (a <> "=\"" <> s <> "\"")
 
--- If you squint, (Structure str) is how we create a variable of type Structure
--- Since everything is functional, having this definition in the args
--- gives us access to the underlying data.
-getStructureString :: Structure -> String
-getStructureString (Structure str) = str
+concatHtml :: [Html] -> Html
+concatHtml = Html . concatMap show
 
--- I feel like escaping should not be the responsibility of
---  the html library
-escape :: [Char] -> [Char]
+getAttributesString :: [Attribute] -> String
+getAttributesString attributes = ' ' : unwords (map (\(Attribute x) -> x) attributes)
+
+-- This is the only way to create an EscapedString
+escape :: String -> Html
 escape =
   let escapeChar c =
         case c of
@@ -106,15 +129,6 @@ escape =
           '"' -> "&quot;"
           '\'' -> "&#39;"
           _ -> [c]
-   in concatMap escapeChar
+   in Html . concatMap escapeChar
 
-instance Semigroup Structure where
-  (<>) :: Structure -> Structure -> Structure
-  (<>) a b =
-    Structure (getStructureString a <> getStructureString b)
-
-render :: Html -> String
-render a =
-  case a of
-    (Text t) -> t
-    (Elements e) -> getStructureString e
+type Title = String
