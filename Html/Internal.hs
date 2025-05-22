@@ -34,16 +34,17 @@ em_ = el "em"
 bi_ :: Html -> Html
 bi_ = strong_ . em_
 
+code_ :: Html -> Html
+code_ = el "code"
+
 quote_ :: Html -> Html
 quote_ = ela "div" [attr "class" "quote"]
 
--- Little bit jank for the list elements, but only need to fix if other
--- functions require concat HTML
 ol_ :: [Html] -> Html
-ol_ items = el "ol" (Structure (Element (concatMap (getHtmlString . li_) items)))
+ol_ items = el "ol" (concatHtml (map li_ items))
 
 ul_ :: [Html] -> Html
-ul_ items = el "ul" (Structure (Element (concatMap (getHtmlString . li_) items)))
+ul_ items = el "ul" (concatHtml (map li_ items))
 
 li_ :: Html -> Html
 li_ = el "li"
@@ -62,9 +63,11 @@ ela tag attributes content =
         )
     )
 
+-- Inline element
 iel :: String -> Html
 iel tag = Structure (Element ("<" <> tag <> " />"))
 
+-- Inline element with attributes. Maybe fix with monads or whatever in future
 iela :: String -> [Attribute] -> Html
 iela tag attributes =
   Structure (Element ("<" <> tag <> getAttributesString attributes <> " />"))
