@@ -2,6 +2,8 @@
 
 module Html.Internal where
 
+import GHC.Natural (Natural)
+
 -- This data type exists because there are times where
 -- we can pass either an html structure or an escaped string.
 -- eg. <p> <em> bold </em> </p>
@@ -12,6 +14,12 @@ newtype Element = Element String
 newtype EscapedString = EscapedString String
 
 newtype Attribute = Attribute String
+
+h_ :: Natural -> Html -> Html
+h_ n = el ("h" <> show n)
+
+p_ :: Html -> Html
+p_ = el "p"
 
 el :: String -> Html -> Html
 el tag content =
@@ -27,8 +35,15 @@ ela tag attributes content =
         )
     )
 
+iel :: String -> Html
+iel tag = Structure (Element ("<" <> tag <> " />"))
+
+iela :: String -> [Attribute] -> Html
+iela tag attributes =
+  Structure (Element ("<" <> tag <> getAttributesString attributes <> " />"))
+
 ota :: String -> [Attribute] -> String
-ota tag attributes = "<" <> tag <> unwords (map (\(Attribute x) -> x) attributes) <> ">"
+ota tag attributes = "<" <> tag <> getAttributesString attributes <> ">"
 
 ot :: String -> String
 ot tag = "<" <> tag <> ">"
@@ -43,6 +58,9 @@ getHtmlString :: Html -> String
 getHtmlString content = case content of
   (Text s) -> (\(EscapedString e) -> e) s
   (Structure s) -> (\(Element e) -> e) s
+
+getAttributesString :: [Attribute] -> String
+getAttributesString attributes = unwords (map (\(Attribute x) -> x) attributes)
 
 -- This is the only way to create an EscapedString
 escape :: String -> EscapedString
