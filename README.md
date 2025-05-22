@@ -2,6 +2,10 @@
 
 markdown -> html, written in haskell
 
+## idea history
+I wanted to keep everythin clean, so at first, I created separate types for strings that have been escaped to HTML, and actual HTML structures. 
+However, as I developed the library, I releazed that an escaped string and an HTML structure were functionally identical. However, it is still useful to keep a type "EscapedString" because it gives a hint as to the uses. Although functionally equivalent, you would not want to pass in an actual html structure into a code block (usually). 
+
 ## devlog
 - early dev, decided on supporting "basic sytanx" in markdown
   - code blocks should be fenced
