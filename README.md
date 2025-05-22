@@ -2,6 +2,14 @@
 
 markdown -> html, written in haskell
 
+## TODO:
+1. markdown parser
+2. make ul and ol take in a li, so that some objects can be "escaped"
+3. project file structure
+4. set up cabal
+5. make this into a proper cli app, maybe use some jank bash scripts at first
+6. publish to hackage
+
 ## idea history
 Need to make a config file to define the style and code highlighting theme.
 
