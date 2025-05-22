@@ -3,6 +3,8 @@
 markdown -> html, written in haskell
 
 ## idea history
+Need to make a config file to define the style and code highlighting theme.
+
 Maybe I can implement a "wrapper" for everything that just passes in the calls the escape function for me. 
 
 I wanted to keep everythin clean, so at first, I created separate types for strings that have been escaped to HTML, and actual HTML structures. 
