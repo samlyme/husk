@@ -1,0 +1,118 @@
+/* ===== Light Mode Blog Theme with Serif Fonts ===== */
+
+:root {
+  --bg-color: #ffffff;
+  --text-color: #222222;
+  --accent-color: #5a32c2;
+  --link-color: #005f99;
+  --heading-color: #000000;
+  --code-bg: #f5f5f5;
+  --code-text: #2d5b00;
+  --border-color: #dddddd;
+  --font-main: 'Georgia', serif;
+  --font-code: 'Fira Code', 'Courier New', serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--font-main);
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: var(--link-color);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+header, nav, footer {
+  background: #f2f2f2;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  font-family: var(--font-main);
+}
+
+main {
+  max-width: 75ch;
+  margin: auto;
+  padding: 2rem;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--heading-color);
+  font-family: var(--font-main);
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+p {
+  margin-bottom: 1.5rem;
+}
+
+code, pre {
+  font-family: var(--font-code);
+  background-color: var(--code-bg);
+  color: var(--code-text);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+}
+
+pre {
+  padding: 1em;
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+}
+
+blockquote {
+  border-left: 4px solid var(--accent-color);
+  padding-left: 1em;
+  color: #555;
+  margin: 1.5rem 0;
+  font-style: italic;
+}
+
+ul, ol {
+  padding-left: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 80%;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+}
+
+th, td {
+  border: 1px solid var(--border-color);
+  padding: 0.75rem;
+  text-align: left;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 2rem 0;
+}
+
+footer {
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+  font-size: 0.9rem;
+}

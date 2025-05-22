@@ -6,6 +6,7 @@ module Html
     h_,
     p_,
     br_,
+    hr_,
     strong_,
     em_,
     bi_,

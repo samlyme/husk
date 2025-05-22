@@ -25,6 +25,7 @@ page =
         <> p_ (escape "Maybe some inline " <> code_ (escape "code") <> escape "? ")
         <> codeBlock_ "python" (escape "# Python more your style?\nprint('Hello, World!')")
         <> quote_ (p_ (escape "\"Haskell is the world's finest imperative language.\"") <> p_ (em_ (escape "— Simon Peyton Jones")))
+        <> hr_
         <> p_ (escape "Pros of Haskell: ")
         <> ol_
           [ p_ (escape "Pure Functional Programming"),

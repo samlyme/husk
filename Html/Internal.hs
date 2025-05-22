@@ -33,11 +33,13 @@ html_ title content =
           ( el "title" (escape title)
               <> iela "meta" [attr "charset" "UTF-8"]
               <> iela "meta" [attr "name" "viewport", attr "content" "width=device-width, initial-scale=1.0"]
-              <> iela "link" [attr "rel" "stylesheet", attr "href" "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css"]
+              -- make an option to change light/dark theme and the code syntax theme
+              <> iela "link" [attr "rel" "stylesheet", attr "href" "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/atom-one-dark.min.css"]
+              <> iela "link" [attr "rel" "stylesheet", attr "href" "./style-light.css"]
               <> iela "script" [attr "src" "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"]
               <> el "script" (Html "hljs.highlightAll();")
           )
-          <> el "body" content
+          <> el "body" (el "main" content)
       )
 
 h_ :: Natural -> Html -> Html
@@ -48,6 +50,9 @@ p_ = el "p"
 
 br_ :: Html
 br_ = iel "br"
+
+hr_ :: Html
+hr_ = iel "hr"
 
 strong_ :: Html -> Html
 strong_ = el "strong"
@@ -68,7 +73,7 @@ codeBlock_ lang content =
   el "pre" (ela "code" [attr "class" ("language-" <> lang)] content)
 
 quote_ :: Html -> Html
-quote_ = ela "div" [attr "class" "quote"]
+quote_ = el "blockquote"
 
 ol_ :: [Html] -> Html
 ol_ items = el "ol" (concatHtml (map li_ items))
