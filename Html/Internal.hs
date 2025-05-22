@@ -30,9 +30,12 @@ html_ title content =
       [attr "lang" "en"]
       ( el
           "head"
-          ( iela "meta" [attr "charset" "UTF-8"]
+          ( el "title" (escape title)
+              <> iela "meta" [attr "charset" "UTF-8"]
               <> iela "meta" [attr "name" "viewport", attr "content" "width=device-width, initial-scale=1.0"]
-              <> el "title" (escape title)
+              <> iela "link" [attr "rel" "stylesheet", attr "href" "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css"]
+              <> iela "script" [attr "src" "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"]
+              <> el "script" (Html "hljs.highlightAll();")
           )
           <> el "body" content
       )
