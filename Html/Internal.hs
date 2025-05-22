@@ -21,6 +21,33 @@ h_ n = el ("h" <> show n)
 p_ :: Html -> Html
 p_ = el "p"
 
+br_ :: Html
+br_ = iel "br"
+
+strong_ :: Html -> Html
+strong_ = el "strong"
+
+em_ :: Html -> Html
+em_ = el "em"
+
+-- bold italic
+bi_ :: Html -> Html
+bi_ = strong_ . em_
+
+quote_ :: Html -> Html
+quote_ = ela "div" [attr "class" "quote"]
+
+-- Little bit jank for the list elements, but only need to fix if other
+-- functions require concat HTML
+ol_ :: [Html] -> Html
+ol_ items = el "ol" (Structure (Element (concatMap (getHtmlString . li_) items)))
+
+ul_ :: [Html] -> Html
+ul_ items = el "ul" (Structure (Element (concatMap (getHtmlString . li_) items)))
+
+li_ :: Html -> Html
+li_ = el "li"
+
 el :: String -> Html -> Html
 el tag content =
   Structure (Element (ot tag <> getHtmlString content <> ct tag))
@@ -54,13 +81,16 @@ ct tag = "</" <> tag <> ">"
 attr :: String -> String -> Attribute
 attr a s = Attribute (a <> "=\"" <> s <> "\"")
 
+concatHtml :: [Html] -> Html
+concatHtml = Structure . Element . concatMap getHtmlString
+
 getHtmlString :: Html -> String
 getHtmlString content = case content of
   (Text s) -> (\(EscapedString e) -> e) s
   (Structure s) -> (\(Element e) -> e) s
 
 getAttributesString :: [Attribute] -> String
-getAttributesString attributes = unwords (map (\(Attribute x) -> x) attributes)
+getAttributesString attributes = ' ' : unwords (map (\(Attribute x) -> x) attributes)
 
 -- This is the only way to create an EscapedString
 escape :: String -> EscapedString
