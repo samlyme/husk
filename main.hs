@@ -20,29 +20,46 @@ page =
         <> h_ 5 (escape "This is a h5")
         <> h_ 6 (escape "This is a h6")
         <> p_ (escape "This is a paragraph.")
-        <> p_ (escape "This is another paragraph." <> br_ <> escape "With a line break.")
-        <> p_ (escape "How about some " <> strong_ (escape "bold? ") <> escape "Or perhaps some " <> em_ (escape "italics? ") <> bi_ (escape "Both? "))
-        <> p_ (escape "Maybe some inline " <> code_ (escape "code") <> escape "? ")
+        <> p_
+          ( escape "This is another paragraph."
+              <> br_
+              <> escape "With a line break."
+          )
+        <> p_
+          ( escape "How about some "
+              <> strong_ (escape "bold? ")
+              <> escape "Or perhaps some "
+              <> em_ (escape "italics? ")
+              <> bi_ (escape "Both? ")
+          )
+        <> p_
+          ( escape "Maybe some inline "
+              <> code_ (escape "code")
+              <> escape "? "
+          )
         <> codeBlock_ "python" (escape "# Python more your style?\nprint('Hello, World!')")
-        <> quote_ (p_ (escape "\"Haskell is the world's finest imperative language.\"") <> p_ (em_ (escape "— Simon Peyton Jones")))
+        <> quote_
+          ( p_ (escape "\"Haskell is the world's finest imperative language.\"")
+              <> p_ (em_ (escape "— Simon Peyton Jones"))
+          )
         <> hr_
         <> p_ (escape "Pros of Haskell: ")
         <> ol_
-          [ p_ (escape "Pure Functional Programming"),
-            p_ (escape "Strong, Static Type System"),
-            p_ (escape "Excellent Abstractions"),
-            p_ (escape "Great for Compilers and DSLs"),
-            p_ (escape "Lazy Evaluation"),
-            p_ (escape "High Performance (when tuned)"),
-            p_ (escape "Rich Ecosystem for Academic and Research-Grade Tools")
+          [ li_ (p_ (escape "Pure Functional Programming")),
+            li_ (p_ (escape "Strong, Static Type System")),
+            li_ (p_ (escape "Excellent Abstractions")),
+            li_ (p_ (escape "Great for Compilers and DSLs")),
+            li_ (p_ (escape "Lazy Evaluation")),
+            li_ (p_ (escape "High Performance (when tuned)")),
+            li_ (p_ (escape "Rich Ecosystem for Academic and Research-Grade Tools"))
           ]
         <> p_ (escape "Cons of Haskell: ")
         <> ul_
-          [ p_ (escape "Steep Learning Curve"),
-            p_ (escape "Laziness Can Be Tricky"),
-            p_ (escape "Smaller Ecosystem"),
-            p_ (escape "Cryptic Error Messages"),
-            p_ (escape "Dependency Hell in Some Ecosystems"),
-            p_ (escape "Smaller Community and Hiring Pool")
+          [ li_ (p_ (escape "Steep Learning Curve")),
+            li_ (p_ (escape "Laziness Can Be Tricky")),
+            li_ (p_ (escape "Smaller Ecosystem")),
+            li_ (p_ (escape "Cryptic Error Messages")),
+            li_ (p_ (escape "Dependency Hell in Some Ecosystems")),
+            li_ (p_ (escape "Smaller Community and Hiring Pool"))
           ]
     )

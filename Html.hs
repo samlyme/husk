@@ -15,6 +15,7 @@ module Html
     quote_,
     ol_,
     ul_,
+    li_,
     attr,
     escape,
   )

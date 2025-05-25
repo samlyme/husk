@@ -76,10 +76,10 @@ quote_ :: Html -> Html
 quote_ = el "blockquote"
 
 ol_ :: [Html] -> Html
-ol_ items = el "ol" (concatHtml (map li_ items))
+ol_ items = el "ol" (concatHtml items)
 
 ul_ :: [Html] -> Html
-ul_ items = el "ul" (concatHtml (map li_ items))
+ul_ items = el "ul" (concatHtml items)
 
 li_ :: Html -> Html
 li_ = el "li"
