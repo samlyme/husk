@@ -10,7 +10,7 @@ type Markdown = [Block]
 data Block
   = Heading Natural [Inline]
   | Paragraph [Inline]
-  | OrderedList Int [Block]
+  | OrderedList [Block]
   | UnorderedList [Block]
   | ListItem [Block]
   | CodeBlock String [String]
@@ -34,7 +34,7 @@ renderBlock :: Block -> Html
 renderBlock block = case block of
   (Heading n a) -> h_ n (renderLine a)
   (Paragraph a) -> p_ (renderLine a)
-  (OrderedList _ a) -> ol_ (map renderListItem a)
+  (OrderedList a) -> ol_ (map renderListItem a)
   (UnorderedList a) -> ul_ (map renderListItem a)
   (ListItem a) -> li_ (concatHtml (map renderBlock a))
   (CodeBlock l a) -> codeBlock_ l (escape (unlines (reverse a)))
@@ -45,7 +45,7 @@ renderBlock block = case block of
 renderListItem :: Block -> Html
 renderListItem (Paragraph p) = li_ (renderLine p)
 renderListItem (UnorderedList ul) = ul_ (map renderListItem ul)
-renderListItem (OrderedList _ ol) = ol_ (map renderListItem ol)
+renderListItem (OrderedList ol) = ol_ (map renderListItem ol)
 renderListItem block = li_ (renderBlock block)
 
 renderLine :: [Inline] -> Html
@@ -78,7 +78,7 @@ parseLines Nothing (currentLine : sl) =
     then parseLines Nothing sl
     else case parseLine currentLine of
       (Paragraph p) -> parseLines (Just (Paragraph p)) sl
-      (OrderedList d o) -> parseLines (Just (OrderedList d o)) sl
+      (OrderedList o) -> parseLines (Just (OrderedList o)) sl
       (UnorderedList u) -> parseLines (Just (UnorderedList u)) sl
       (CodeBlock l c) -> parseLines (Just (CodeBlock l c)) sl
       (QuoteBlock q) -> parseLines (Just (QuoteBlock q)) sl

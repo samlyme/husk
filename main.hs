@@ -1,16 +1,54 @@
 {-# OPTIONS_GHC -Wall #-}
 
-import Parser.Internal (parse, render)
+import Html (html_)
+import Parser.Internal (Block (CodeBlock, Heading, OrderedList, Paragraph, QuoteBlock, UnorderedList), Inline (Bold, Code, Italic, ItalicBold, LineBreak, Plain), parse, render)
 import System.Process (readProcess)
+
+testAst =
+  [ Heading 1 [Plain "This is a h1"],
+    Heading 2 [Plain "This is a h2"],
+    Heading 3 [Plain "This is a h3"],
+    Heading 4 [Plain "This is a h4"],
+    Heading 5 [Plain "This is a h5"],
+    Heading 6 [Plain "This is a h6"],
+    Paragraph [Plain "This is a paragraph"],
+    Paragraph [Plain "This is another paragraph.", LineBreak, Plain "With a line break."],
+    Paragraph [Plain "How about some ", Bold "Bold", Plain "? Or perhaps some ", Italic "italics", Plain "? ", ItalicBold "Both", Plain "?"],
+    Paragraph [Plain "Maybe some inline ", Code "code", Plain "?"],
+    CodeBlock "python" ["# Python more your style?", "print('Hellow, World!')"],
+    QuoteBlock [Paragraph [Plain "Haskell is the world's finest imperative language."], Paragraph [Plain "Simon Peyton Jones"]],
+    Paragraph [Plain "Pros of Haskell:"],
+    UnorderedList
+      [ Paragraph [Plain "Pure Functional Programming"],
+        Paragraph [Plain "Strong, Static Type System"],
+        UnorderedList
+          [ Paragraph [Plain "nested"],
+            Paragraph [Plain "list"],
+            UnorderedList
+              [ Paragraph [Plain "nested"],
+                Paragraph [Plain "list"]
+              ]
+          ]
+      ],
+    OrderedList
+      [ Paragraph [Plain "Steep Learning Curve"],
+        Paragraph [Plain "Laziness Can Be Tricky"],
+        OrderedList
+          [ Paragraph [Plain "nested"],
+            Paragraph [Plain "list"]
+          ]
+      ]
+  ]
 
 -- evil jank
 main :: IO ()
 main = do
   raw <- readFile "content/index.md"
   let ast = parse raw
-  let page = render ast
-  formatted <- readProcess "tidy" ["-indent", "-quiet"] (show page)
-  writeFile "build/index.html" formatted
+  mapM_ print ast
+  let page = html_ "my title" (render ast)
+  -- formatted <- readProcess "tidy" ["-indent", "-quiet"] (show page)
+  writeFile "build/index.html" (show page)
 
 -- page :: Html
 -- page =
