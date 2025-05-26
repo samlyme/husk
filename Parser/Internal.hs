@@ -2,6 +2,7 @@
 
 module Parser.Internal where
 
+import GHC.Natural (Natural)
 import Html.Internal (Html, bi_, br_, codeBlock_, code_, concatHtml, em_, escape, h_, hr_, html_, li_, ol_, p_, quote_, strong_, ul_)
 
 type Markdown = [Block]
@@ -95,9 +96,6 @@ parseHeading n s = Heading n (parseInline (trim s))
 
 parseParagraph :: String -> Block
 parseParagraph s = Paragraph (parseInline s)
-
-parseUnorderedList :: String -> BlockArguments
-parseUnorderedList s = 
 
 trim :: String -> String
 trim = unwords . words
