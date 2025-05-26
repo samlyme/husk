@@ -2,18 +2,17 @@
 
 module Parser.Internal where
 
-import GHC.Natural (Natural)
-import Html.Internal (Html, bi_, br_, code_, em_, escape, h_, html_, p_, strong_)
+import Html.Internal (Html, bi_, br_, codeBlock_, code_, concatHtml, em_, escape, h_, hr_, html_, li_, ol_, p_, quote_, strong_, ul_)
 
 type Markdown = [Block]
 
 data Block
   = Heading Natural [Inline]
   | Paragraph [Inline]
-  | OrderedList [Block]
+  | OrderedList Int [Block]
   | UnorderedList [Block]
   | ListItem [Block]
-  | CodeBlock String
+  | CodeBlock String String
   | QuoteBlock [Block]
   | HorizontalRule
   deriving (Show, Eq)
@@ -28,18 +27,24 @@ data Inline
   deriving (Show, Eq)
 
 render :: Markdown -> Html
-render m = html_ "test" (p_ (escape "test"))
+render = html_ "my title" . foldr ((<>) . renderBlock) (escape "")
 
 renderBlock :: Block -> Html
 renderBlock block = case block of
   (Heading n a) -> h_ n (renderLine a)
+  (Paragraph a) -> p_ (renderLine a)
+  (OrderedList _ a) -> ol_ (map renderBlock a)
+  (UnorderedList a) -> ul_ (map renderBlock a)
+  (ListItem a) -> li_ (concatHtml (map renderBlock a))
+  (CodeBlock a l) -> codeBlock_ l (escape a)
+  (QuoteBlock a) -> quote_ (concatHtml (map renderBlock a))
+  HorizontalRule -> hr_
 
 renderLine :: [Inline] -> Html
-renderLine (i : rest) = renderInline i <> renderLine rest
-renderLine [] = escape ""
+renderLine = foldr ((<>) . renderInline) (escape "")
 
 renderInline :: Inline -> Html
-renderInline s = case s of
+renderInline i = case i of
   (Italic s) -> em_ (escape s)
   (Bold s) -> strong_ (escape s)
   (ItalicBold s) -> bi_ (escape s)
@@ -49,10 +54,6 @@ renderInline s = case s of
 
 main :: IO ()
 main = do
-  -- let h1 = parseHeading 1 "Heading 1"
-  -- let h2 = parseHeading 1 "# Heading 2"
-  -- mapM_ print [h1, h2]
-
   raw <- readFile "content/test.md"
   let parsed = parse raw
   mapM_ print parsed
@@ -69,9 +70,9 @@ parseLines Nothing (currentLine : sl) =
     then parseLines Nothing sl
     else case parseLine currentLine of
       (Paragraph p) -> parseLines (Just (Paragraph p)) sl
-      (OrderedList o) -> parseLines (Just (OrderedList o)) sl
+      (OrderedList d o) -> parseLines (Just (OrderedList d o)) sl
       (UnorderedList u) -> parseLines (Just (UnorderedList u)) sl
-      (CodeBlock c) -> parseLines (Just (CodeBlock c)) sl
+      (CodeBlock c l) -> parseLines (Just (CodeBlock c l)) sl
       (QuoteBlock q) -> parseLines (Just (QuoteBlock q)) sl
       b -> parseLines (Just b) sl
 parseLines (Just (Paragraph a)) (currentLine : sl) =
@@ -94,6 +95,9 @@ parseHeading n s = Heading n (parseInline (trim s))
 
 parseParagraph :: String -> Block
 parseParagraph s = Paragraph (parseInline s)
+
+parseUnorderedList :: String -> BlockArguments
+parseUnorderedList s = 
 
 trim :: String -> String
 trim = unwords . words
