@@ -28,18 +28,25 @@ data Inline
   deriving (Show, Eq)
 
 render :: Markdown -> Html
-render = html_ "my title" . foldr ((<>) . renderBlock) (escape "")
+render = foldr ((<>) . renderBlock) (escape "")
 
 renderBlock :: Block -> Html
 renderBlock block = case block of
   (Heading n a) -> h_ n (renderLine a)
   (Paragraph a) -> p_ (renderLine a)
-  (OrderedList _ a) -> ol_ (map renderBlock a)
-  (UnorderedList a) -> ul_ (map renderBlock a)
+  (OrderedList _ a) -> ol_ (map renderListItem a)
+  (UnorderedList a) -> ul_ (map renderListItem a)
   (ListItem a) -> li_ (concatHtml (map renderBlock a))
-  (CodeBlock a l) -> codeBlock_ l (escape a)
+  (CodeBlock l a) -> codeBlock_ l (escape a)
   (QuoteBlock a) -> quote_ (concatHtml (map renderBlock a))
   HorizontalRule -> hr_
+
+-- Somehow implement that indent to escape shit
+renderListItem :: Block -> Html
+renderListItem (Paragraph p) = li_ (renderLine p)
+renderListItem (UnorderedList ul) = ul_ (map renderListItem ul)
+renderListItem (OrderedList _ ol) = ol_ (map renderListItem ol)
+renderListItem block = li_ (renderBlock block)
 
 renderLine :: [Inline] -> Html
 renderLine = foldr ((<>) . renderInline) (escape "")
