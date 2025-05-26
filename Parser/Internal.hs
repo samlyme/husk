@@ -13,7 +13,7 @@ data Block
   | OrderedList Int [Block]
   | UnorderedList [Block]
   | ListItem [Block]
-  | CodeBlock String String
+  | CodeBlock String [String]
   | QuoteBlock [Block]
   | HorizontalRule
   deriving (Show, Eq)
@@ -37,7 +37,7 @@ renderBlock block = case block of
   (OrderedList _ a) -> ol_ (map renderListItem a)
   (UnorderedList a) -> ul_ (map renderListItem a)
   (ListItem a) -> li_ (concatHtml (map renderBlock a))
-  (CodeBlock l a) -> codeBlock_ l (escape a)
+  (CodeBlock l a) -> codeBlock_ l (escape (unlines (reverse a)))
   (QuoteBlock a) -> quote_ (concatHtml (map renderBlock a))
   HorizontalRule -> hr_
 
@@ -80,7 +80,7 @@ parseLines Nothing (currentLine : sl) =
       (Paragraph p) -> parseLines (Just (Paragraph p)) sl
       (OrderedList d o) -> parseLines (Just (OrderedList d o)) sl
       (UnorderedList u) -> parseLines (Just (UnorderedList u)) sl
-      (CodeBlock c l) -> parseLines (Just (CodeBlock c l)) sl
+      (CodeBlock l c) -> parseLines (Just (CodeBlock l c)) sl
       (QuoteBlock q) -> parseLines (Just (QuoteBlock q)) sl
       b -> parseLines (Just b) sl
 parseLines (Just (Paragraph a)) (currentLine : sl) =
@@ -89,11 +89,16 @@ parseLines (Just (Paragraph a)) (currentLine : sl) =
     else case parseLine currentLine of
       (Paragraph p) -> parseLines (Just (Paragraph (a ++ [LineBreak] ++ p))) sl
       b -> Paragraph a : parseLines (Just b) sl
+parseLines (Just (CodeBlock l s)) (currentLine : sl) =
+  case matchPrefixN 3 '`' currentLine of
+    (Just _) -> CodeBlock l s : parseLines Nothing sl
+    _ -> parseLines (Just (CodeBlock l (currentLine : s))) sl
 parseLines (Just a) ls = a : parseLines Nothing ls
 
 parseLine :: String -> Block
-parseLine s =
-  case s of
+parseLine s = case matchPrefixN 3 '`' s of
+  (Just l) -> CodeBlock l []
+  _ -> case s of
     ('#' : rest) -> parseHeading 1 rest
     _ -> parseParagraph s
 
@@ -106,6 +111,11 @@ parseParagraph s = Paragraph (parseInline s)
 
 trim :: String -> String
 trim = unwords . words
+
+matchPrefixN :: Int -> Char -> String -> Maybe String
+matchPrefixN n c s =
+  let (prefix, rest) = span (== c) s
+   in if length prefix == n then Just rest else Nothing
 
 -- Entry point
 parseInline :: String -> [Inline]
