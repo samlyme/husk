@@ -61,56 +61,52 @@ renderInline i = case i of
   LineBreak -> br_
 
 parse :: String -> Markdown
-parse s = parseLines Nothing (lines s)
+parse s = fst (parseLines Nothing (lines s))
 
 -- Takes in the current block you are working on, and the rest of the strings
-parseLines :: Maybe Block -> [String] -> Markdown
-parseLines Nothing [] = []
-parseLines (Just a) [] = [a]
-parseLines Nothing (currentLine : sl) =
+parseLines :: Maybe Block -> [String] -> (Markdown, [String])
+parseLines Nothing [] = ([], [])
+parseLines (Just a) [] = ([a], [])
+parseLines Nothing (currentLine : rest) =
   if trim currentLine == ""
-    then parseLines Nothing sl
+    then let (m, s) = parseLines Nothing rest in (m, s)
     else case parseLine currentLine of
-      (Paragraph p) -> parseLines (Just (Paragraph p)) sl
-      (OrderedList o) -> parseLines (Just (OrderedList o)) sl
-      (UnorderedList u) -> parseLines (Just (UnorderedList u)) sl
-      (CodeBlock l c) -> parseLines (Just (CodeBlock l c)) sl
-      (QuoteBlock d q) -> parseLines (Just (QuoteBlock d q)) sl
-      b -> parseLines (Just b) sl
-parseLines (Just (Paragraph a)) (currentLine : sl) =
+      (Paragraph p) -> parseLines (Just (Paragraph p)) rest
+      b -> let (m, s) = parseLines (Just b) rest in (m, s)
+parseLines (Just (Paragraph p)) (currentLine : rest) =
   if trim currentLine == ""
-    then Paragraph a : parseLines Nothing sl
+    then let (m, s) = parseLines Nothing rest in (Paragraph p : m, s)
     else case parseLine currentLine of
-      (Paragraph p) -> parseLines (Just (Paragraph (a ++ [LineBreak] ++ p))) sl
-      b -> Paragraph a : parseLines (Just b) sl
-parseLines (Just (QuoteBlock d q)) (currentLine : sl) =
+      (Paragraph l) -> parseLines (Just (Paragraph (p ++ [LineBreak] ++ l))) rest
+      b -> let (m, s) = parseLines (Just b) rest in (Paragraph p : m, s)
+parseLines (Just (QuoteBlock d q)) (currentLine : rest) =
   if trim currentLine == ""
-    then QuoteBlock d q : parseLines Nothing sl
+    then let (m, s) = parseLines Nothing rest in (QuoteBlock d q : m, s)
     else case parseLine currentLine of
       (QuoteBlock d1 q1) ->
-        if d1 == d
-          then parseLines (Just (QuoteBlock d (q ++ q1))) sl
+        if d == d1
+          then parseLines (Just (QuoteBlock d (q ++ q1))) rest
           else
-            if d1 > d
-              then [QuoteBlock d (q ++ parseLines (Just (QuoteBlock d1 q1)) sl)]
-              else [QuoteBlock d1 q1]
-      b -> QuoteBlock d q : parseLines (Just b) sl
-parseLines (Just (CodeBlock l s)) (currentLine : sl) =
-  case matchPrefixN 3 '`' currentLine of
-    (Just _) -> CodeBlock l s : parseLines Nothing sl
-    _ -> parseLines (Just (CodeBlock l (currentLine : s))) sl
-parseLines (Just a) ls = a : parseLines Nothing ls
+            if d < d1
+              then
+                let (m, s) = parseLines (Just (QuoteBlock d1 q1)) rest
+                 in parseLines (Just (QuoteBlock d (q ++ m))) s
+              else ([QuoteBlock d q], currentLine : rest)
+      b -> let (m, s) = parseLines (Just b) rest in (QuoteBlock d q : m, s)
+parseLines (Just a) ls =
+  let (m, s) = parseLines Nothing ls
+   in (a : m, s)
 
 parseLine :: String -> Block
 parseLine s = case matchPrefixN 3 '`' s of
   (Just l) -> CodeBlock l []
   _ -> case s of
-    ('>' : rest) -> parseQuotes 1 rest
+    ('>' : rest) -> parseQuotes 1 (trim rest)
     ('#' : rest) -> parseHeading 1 rest
     _ -> parseParagraph s
 
 parseQuotes :: Natural -> String -> Block
-parseQuotes d ('>' : s) = parseQuotes (d + 1) s
+parseQuotes d ('>' : s) = parseQuotes (d + 1) (trim s)
 parseQuotes d s = QuoteBlock d [parseLine (trim s)]
 
 parseHeading :: Natural -> String -> Block

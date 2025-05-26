@@ -17,24 +17,29 @@ With a line break.
 
 How about some **bold**? Or perhaps some *italics*? ***Both***?
 
-`Maybe some inline code?`
+Maybe some inline `code`?
 
 ```python
 # Python more your style?
 print('Hello, World!')
-"Haskell is the world's finest imperative language."
+``` 
+```js
+// What about js?
+console.log('Hello, World!');
+``` 
+```java
+System.out.println("Hello, World!");
 ```
-
 > "Haskell is the world's finest imperative language."
->
+>> ### Quote Nested header
 > Simon Peyton Jones
 
 Pros of Haskell:
 - Pure Functional Programming
 - Strong, Static Type System
-- Excellent Abstractions
-- Great for Compilers and DSLs
-- Lazy Evaluation
+  - Excellent Abstractions
+  - Great for Compilers and DSLs
+    - Lazy Evaluation
 - High Performance (when tuned)
 - Rich Ecosystem for Academic and Research-Grade Tools
 

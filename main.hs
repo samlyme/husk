@@ -16,7 +16,12 @@ testAst =
     Paragraph [Plain "How about some ", Bold "Bold", Plain "? Or perhaps some ", Italic "italics", Plain "? ", ItalicBold "Both", Plain "?"],
     Paragraph [Plain "Maybe some inline ", Code "code", Plain "?"],
     CodeBlock "python" ["# Python more your style?", "print('Hellow, World!')"],
-    QuoteBlock [Paragraph [Plain "Haskell is the world's finest imperative language."], Paragraph [Plain "Simon Peyton Jones"]],
+    QuoteBlock
+      1
+      [ Paragraph [Plain "Haskell is the world's finest imperative language."],
+        QuoteBlock 2 [Heading 3 [Plain "Quote Nested Header"]],
+        Paragraph [Plain "Simon Peyton Jones"]
+      ],
     Paragraph [Plain "Pros of Haskell:"],
     UnorderedList
       [ Paragraph [Plain "Pure Functional Programming"],
@@ -43,12 +48,16 @@ testAst =
 -- evil jank
 main :: IO ()
 main = do
-  raw <- readFile "content/index.md"
+  raw <- readFile "content/test.md"
   let ast = parse raw
   mapM_ print ast
   let page = html_ "my title" (render ast)
+  -- let page1 = html_ "render test" (render testAst)
   -- formatted <- readProcess "tidy" ["-indent", "-quiet"] (show page)
+  -- formatted1 <- readProcess "tidy" ["-indent", "-quiet"] (show page1)
   writeFile "build/index.html" (show page)
+
+-- writeFile "build/render.html" (show page1)
 
 -- page :: Html
 -- page =
