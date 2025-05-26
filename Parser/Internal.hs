@@ -3,7 +3,7 @@
 module Parser.Internal where
 
 import GHC.Natural (Natural)
-import Html.Internal (Html, escape, html_, p_)
+import Html.Internal (Html, bi_, br_, code_, em_, escape, h_, html_, p_, strong_)
 
 type Markdown = [Block]
 
@@ -27,6 +27,26 @@ data Inline
   | LineBreak
   deriving (Show, Eq)
 
+render :: Markdown -> Html
+render m = html_ "test" (p_ (escape "test"))
+
+renderBlock :: Block -> Html
+renderBlock block = case block of
+  (Heading n a) -> h_ n (renderLine a)
+
+renderLine :: [Inline] -> Html
+renderLine (i : rest) = renderInline i <> renderLine rest
+renderLine [] = escape ""
+
+renderInline :: Inline -> Html
+renderInline s = case s of
+  (Italic s) -> em_ (escape s)
+  (Bold s) -> strong_ (escape s)
+  (ItalicBold s) -> bi_ (escape s)
+  (Code s) -> code_ (escape s)
+  (Plain s) -> escape s
+  LineBreak -> br_
+
 main :: IO ()
 main = do
   -- let h1 = parseHeading 1 "Heading 1"
@@ -42,32 +62,38 @@ parse s = parseLines Nothing (lines s)
 
 -- Takes in the current block you are working on, and the rest of the strings
 parseLines :: Maybe Block -> [String] -> Markdown
-parseLines currentBlock ls =
-  case (currentBlock, ls) of
-    (_, []) -> []
-    (context, currentLine : rest) ->
-      let pcl = parseLine context currentLine
-       in if trim currentLine == ""
-            then
-              parseLines Nothing rest
-            else
-              pcl : parseLines (Just pcl) rest -- Wrap in paragraph for now
+parseLines Nothing [] = []
+parseLines (Just a) [] = [a]
+parseLines Nothing (currentLine : sl) =
+  if trim currentLine == ""
+    then parseLines Nothing sl
+    else case parseLine currentLine of
+      (Paragraph p) -> parseLines (Just (Paragraph p)) sl
+      (OrderedList o) -> parseLines (Just (OrderedList o)) sl
+      (UnorderedList u) -> parseLines (Just (UnorderedList u)) sl
+      (CodeBlock c) -> parseLines (Just (CodeBlock c)) sl
+      (QuoteBlock q) -> parseLines (Just (QuoteBlock q)) sl
+      b -> parseLines (Just b) sl
+parseLines (Just (Paragraph a)) (currentLine : sl) =
+  if trim currentLine == ""
+    then Paragraph a : parseLines Nothing sl
+    else case parseLine currentLine of
+      (Paragraph p) -> parseLines (Just (Paragraph (a ++ [LineBreak] ++ p))) sl
+      b -> Paragraph a : parseLines (Just b) sl
+parseLines (Just a) ls = a : parseLines Nothing ls
 
-parseLine :: Maybe Block -> String -> Block
-parseLine context s =
+parseLine :: String -> Block
+parseLine s =
   case s of
     ('#' : rest) -> parseHeading 1 rest
-    _ -> parseParagraph context s
+    _ -> parseParagraph s
 
 parseHeading :: Natural -> String -> Block
 parseHeading n ('#' : s) = parseHeading (n + 1) s
 parseHeading n s = Heading n (parseInline (trim s))
 
-parseParagraph :: Maybe Block -> String -> Block
-parseParagraph context s =
-  case context of
-    (Just (Paragraph l)) -> Paragraph (l ++ parseInline s)
-    _ -> Paragraph (parseInline s)
+parseParagraph :: String -> Block
+parseParagraph s = Paragraph (parseInline s)
 
 trim :: String -> String
 trim = unwords . words
@@ -119,6 +145,3 @@ isFormatStart s =
 
 isPrefixOf :: String -> String -> Bool
 isPrefixOf p s = take (length p) s == p
-
-render :: Markdown -> Html
-render m = html_ "test" (p_ (escape "test"))
