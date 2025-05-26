@@ -36,7 +36,7 @@ html_ title content =
               -- make an option to change light/dark theme and the code syntax theme
               <> iela "link" [attr "rel" "stylesheet", attr "href" "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/atom-one-dark.min.css"]
               <> iela "link" [attr "rel" "stylesheet", attr "href" "./style-light.css"]
-              <> iela "script" [attr "src" "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"]
+              <> ela "script" [attr "src" "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"] (escape "")
               <> el "script" (Html "hljs.highlightAll();")
           )
           <> el "body" (el "main" content)
