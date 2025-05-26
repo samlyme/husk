@@ -3,7 +3,7 @@
 module Parser.Internal where
 
 import GHC.Natural (Natural)
-import Html.Internal (Html, bi_, br_, codeBlock_, code_, concatHtml, em_, escape, h_, hr_, html_, li_, ol_, p_, quote_, strong_, ul_)
+import Html.Internal (Html, bi_, br_, codeBlock_, code_, concatHtml, em_, escape, h_, hr_, li_, ol_, p_, quote_, strong_, ul_)
 
 type Markdown = [Block]
 
@@ -14,7 +14,7 @@ data Block
   | UnorderedList [Block]
   | ListItem [Block]
   | CodeBlock String [String]
-  | QuoteBlock [Block]
+  | QuoteBlock Natural [Block]
   | HorizontalRule
   deriving (Show, Eq)
 
@@ -38,7 +38,7 @@ renderBlock block = case block of
   (UnorderedList a) -> ul_ (map renderListItem a)
   (ListItem a) -> li_ (concatHtml (map renderBlock a))
   (CodeBlock l a) -> codeBlock_ l (escape (unlines (reverse a)))
-  (QuoteBlock a) -> quote_ (concatHtml (map renderBlock a))
+  (QuoteBlock _ a) -> quote_ (concatHtml (map renderBlock a))
   HorizontalRule -> hr_
 
 -- Somehow implement that indent to escape shit
@@ -60,12 +60,6 @@ renderInline i = case i of
   (Plain s) -> escape s
   LineBreak -> br_
 
-main :: IO ()
-main = do
-  raw <- readFile "content/test.md"
-  let parsed = parse raw
-  mapM_ print parsed
-
 parse :: String -> Markdown
 parse s = parseLines Nothing (lines s)
 
@@ -81,7 +75,7 @@ parseLines Nothing (currentLine : sl) =
       (OrderedList o) -> parseLines (Just (OrderedList o)) sl
       (UnorderedList u) -> parseLines (Just (UnorderedList u)) sl
       (CodeBlock l c) -> parseLines (Just (CodeBlock l c)) sl
-      (QuoteBlock q) -> parseLines (Just (QuoteBlock q)) sl
+      (QuoteBlock d q) -> parseLines (Just (QuoteBlock d q)) sl
       b -> parseLines (Just b) sl
 parseLines (Just (Paragraph a)) (currentLine : sl) =
   if trim currentLine == ""
@@ -89,6 +83,18 @@ parseLines (Just (Paragraph a)) (currentLine : sl) =
     else case parseLine currentLine of
       (Paragraph p) -> parseLines (Just (Paragraph (a ++ [LineBreak] ++ p))) sl
       b -> Paragraph a : parseLines (Just b) sl
+parseLines (Just (QuoteBlock d q)) (currentLine : sl) =
+  if trim currentLine == ""
+    then QuoteBlock d q : parseLines Nothing sl
+    else case parseLine currentLine of
+      (QuoteBlock d1 q1) ->
+        if d1 == d
+          then parseLines (Just (QuoteBlock d (q ++ q1))) sl
+          else
+            if d1 > d
+              then [QuoteBlock d (q ++ parseLines (Just (QuoteBlock d1 q1)) sl)]
+              else [QuoteBlock d1 q1]
+      b -> QuoteBlock d q : parseLines (Just b) sl
 parseLines (Just (CodeBlock l s)) (currentLine : sl) =
   case matchPrefixN 3 '`' currentLine of
     (Just _) -> CodeBlock l s : parseLines Nothing sl
@@ -99,8 +105,13 @@ parseLine :: String -> Block
 parseLine s = case matchPrefixN 3 '`' s of
   (Just l) -> CodeBlock l []
   _ -> case s of
+    ('>' : rest) -> parseQuotes 1 rest
     ('#' : rest) -> parseHeading 1 rest
     _ -> parseParagraph s
+
+parseQuotes :: Natural -> String -> Block
+parseQuotes d ('>' : s) = parseQuotes (d + 1) s
+parseQuotes d s = QuoteBlock d [parseLine (trim s)]
 
 parseHeading :: Natural -> String -> Block
 parseHeading n ('#' : s) = parseHeading (n + 1) s
