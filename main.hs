@@ -1,16 +1,15 @@
 {-# OPTIONS_GHC -Wall #-}
 
-import Html (html_)
-import Parser.Internal (parse)
-import Renderer
+import Html
+import Parser (parse)
+import Renderer (render)
 import System.Process (readProcess)
 
 -- evil jank
 main :: IO ()
 main = do
-  raw <- readFile "content/test.md"
+  raw <- readFile "content/index.md"
   let ast = parse raw
-  mapM_ print ast
   let page = html_ "my title" (render ast)
   -- let page1 = html_ "render test" (render testAst)
   formatted <- readProcess "tidy" ["-indent", "-quiet"] (show page)

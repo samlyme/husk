@@ -21,9 +21,20 @@ data Block
 
 data Inline
   = Plain String
-  | Italic [Inline]
-  | Bold [Inline]
+  | Italic String
+  | Bold String
+  | ItalicBold String
+  | Code String
   | LineBreak
+
+instance Show Inline where
+  show :: Inline -> String
+  show (Plain text) = reverse text
+  show (Italic text) = "(*" ++ reverse text ++ "*)"
+  show (Bold text) = "(**" ++ reverse text ++ "**)"
+  show (ItalicBold text) = "(***" ++ reverse text ++ "***)"
+  show (Code text) = "`" ++ reverse text ++ "`"
+  show LineBreak = "\n"
 
 parse :: String -> Markdown
 parse s = fst (parseLines Nothing (lines s))
@@ -109,7 +120,7 @@ parseLine s =
       ('-' : rest) ->
         case parseUnorderedList 0 rest of
           Just a -> a
-          Nothing -> Text (fst (parseInline (Plain "") s))
+          Nothing -> Text (parseInline s)
       ('>' : rest) -> parseQuotes 1 (trim rest)
       ('#' : rest) -> parseHeading 1 rest
       (c : rest) ->
@@ -120,43 +131,81 @@ parseLine s =
           else parseParagraph s
       _ -> parseParagraph s
 
-parseInline :: Inline -> String -> ([Inline], String)
-parseInline a "" = ([a], "")
-parseInline LineBreak rest =
-  let (m, r) = parseInline (Plain "") rest
+parseInline :: String -> [Inline]
+parseInline = fst . parseInlineRec (Plain "")
+
+parseCode :: Inline -> String -> (Inline, String)
+parseCode (Code co) "" = (Code co, "")
+parseCode (Code co) ('`' : rest) = (Code co, rest)
+parseCode (Code co) (c : rest) = parseCode (Code (c : co)) rest
+parseCode _ s = (Code "", s)
+
+parseInlineRec :: Inline -> String -> ([Inline], String)
+parseInlineRec a "" = ([a], "")
+parseInlineRec a ('\\' : c : rest) =
+  case a of
+    (Plain t) -> parseInlineRec (Plain (c : t)) rest
+    (Italic t) -> parseInlineRec (Italic (c : t)) rest
+    (Bold t) -> parseInlineRec (Bold (c : t)) rest
+    (ItalicBold t) -> parseInlineRec (ItalicBold (c : t)) rest
+    (Code t) -> parseInlineRec (Code ('\\' : c : t)) rest
+    LineBreak -> parseInlineRec LineBreak (c : rest)
+parseInlineRec LineBreak rest =
+  let (m, r) = parseInlineRec (Plain "") rest
    in (LineBreak : m, r)
+-- Currently Code, shouldn't happen
+parseInlineRec (Code co) s =
+  let (c, r1) = parseCode (Code co) s
+   in let (m, r) = parseInlineRec (Plain "") r1
+       in (c : m, r)
 -- Currently Plain
-parseInline (Plain p) ('*' : '*' : rest) =
-  let (m, r) = parseInline (Bold []) rest
-   in (Plain p : m, r)
-parseInline (Plain p) ('*' : rest) =
-  let (m, r) = parseInline (Italic []) rest
-   in (Plain p : m, r)
-parseInline (Plain p) (c : rest) = parseInline (Plain (c : p)) rest
+parseInlineRec (Plain p) ('`' : rest) =
+  let (c, r1) = parseCode (Code "") rest
+   in let (m, r) = parseInlineRec (Plain "") r1
+       in if p == "" then (c : m, r) else (Plain p : c : m, r)
+parseInlineRec (Plain p) ('*' : '*' : rest) =
+  let (m, r) = parseInlineRec (Bold "") rest
+   in if p == "" then (m, r) else (Plain p : m, r)
+parseInlineRec (Plain p) ('*' : rest) =
+  let (m, r) = parseInlineRec (Italic "") rest
+   in if p == "" then (m, r) else (Plain p : m, r)
+parseInlineRec (Plain p) (c : rest) = parseInlineRec (Plain (c : p)) rest
 -- Currently Bold
-parseInline (Bold b) ('*' : '*' : rest) =
-  let (m, r) = parseInline (Plain "") rest
-   in (Bold b : m, r)
-parseInline (Bold b) ('*' : rest) =
-  let (m, r) = parseInline (Italic []) rest
-   in ([Bold (b ++ m)], r)
-parseInline (Bold b) (c : rest) =
-  case b of
-    [] -> let nb = Bold [Plain [c]] in parseInline nb rest
-    (Plain p : r) -> let nb = Bold (Plain (c : p) : r) in parseInline nb rest
-    r -> let nb = Bold (Plain [c] : r) in parseInline nb rest
+parseInlineRec (Bold b) ('`' : rest) =
+  let (c, r1) = parseCode (Code "") rest
+   in let (m, r) = parseInlineRec (Bold "") r1
+       in if b == "" then (c : m, r) else (Bold b : c : m, r)
+parseInlineRec (Bold b) ('*' : '*' : rest) =
+  let (m, r) = parseInlineRec (Plain "") rest
+   in if b == "" then (m, r) else (Bold b : m, r)
+parseInlineRec (Bold b) ('*' : rest) =
+  let (m, r) = parseInlineRec (ItalicBold "") rest
+   in if b == "" then (m, r) else (Bold b : m, r)
+parseInlineRec (Bold b) (c : rest) = parseInlineRec (Bold (c : b)) rest
 -- Currently Italic
-parseInline (Italic i) ('*' : '*' : rest) =
-  let (m, r) = parseInline (Bold []) rest
-   in ([Italic (i ++ m)], r)
-parseInline (Italic i) ('*' : rest) =
-  let (m, r) = parseInline (Plain "") rest
-   in (Italic i : m, r)
-parseInline (Italic i) (c : rest) =
-  case i of
-    [] -> let ni = Italic [Plain [c]] in parseInline ni rest
-    (Plain p : r) -> let ni = Italic (Plain (c : p) : r) in parseInline ni rest
-    r -> let ni = Italic (Plain [c] : r) in parseInline ni rest
+parseInlineRec (Italic i) ('`' : rest) =
+  let (c, r1) = parseCode (Code "") rest
+   in let (m, r) = parseInlineRec (Italic "") r1
+       in if i == "" then (c : m, r) else (Italic i : c : m, r)
+parseInlineRec (Italic i) ('*' : '*' : rest) =
+  let (m, r) = parseInlineRec (ItalicBold "") rest
+   in if i == "" then (m, r) else (Italic i : m, r)
+parseInlineRec (Italic i) ('*' : rest) =
+  let (m, r) = parseInlineRec (Plain "") rest
+   in if i == "" then (m, r) else (Italic i : m, r)
+parseInlineRec (Italic i) (c : rest) = parseInlineRec (Italic (c : i)) rest
+-- Currently ItalicBold
+parseInlineRec (ItalicBold ib) ('`' : rest) =
+  let (c, r1) = parseCode (Code "") rest
+   in let (m, r) = parseInlineRec (ItalicBold "") r1
+       in if ib == "" then (c : m, r) else (ItalicBold ib : c : m, r)
+parseInlineRec (ItalicBold ib) ('*' : '*' : rest) =
+  let (m, r) = parseInlineRec (Italic "") rest
+   in if ib == "" then (m, r) else (ItalicBold ib : m, r)
+parseInlineRec (ItalicBold ib) ('*' : rest) =
+  let (m, r) = parseInlineRec (Bold "") rest
+   in if ib == "" then (m, r) else (ItalicBold ib : m, r)
+parseInlineRec (ItalicBold ib) (c : rest) = parseInlineRec (ItalicBold (c : ib)) rest
 
 parseIndented :: Natural -> String -> Block
 parseIndented d (' ' : s) = parseIndented (d + 1) s
