@@ -75,11 +75,11 @@ codeBlock_ lang content =
 quote_ :: Html -> Html
 quote_ = el "blockquote"
 
-ol_ :: [Html] -> Html
-ol_ items = el "ol" (concatHtml items)
+ol_ :: Html -> Html
+ol_ = el "ol"
 
-ul_ :: [Html] -> Html
-ul_ items = el "ul" (concatHtml items)
+ul_ :: Html -> Html
+ul_ = el "ul"
 
 li_ :: Html -> Html
 li_ = el "li"

@@ -10,9 +10,11 @@ type Markdown = [Block]
 data Block
   = Heading Natural [Inline]
   | Paragraph [Inline]
-  | OrderedList [Block]
-  | UnorderedList [Block]
+  | OrderedList Natural [Block]
+  | UnorderedList Natural [Block]
   | ListItem [Block]
+  | Text [Inline]
+  | Indented [Inline]
   | CodeBlock String [String]
   | QuoteBlock Natural [Block]
   | HorizontalRule
@@ -34,19 +36,14 @@ renderBlock :: Block -> Html
 renderBlock block = case block of
   (Heading n a) -> h_ n (renderLine a)
   (Paragraph a) -> p_ (renderLine a)
-  (OrderedList a) -> ol_ (map renderListItem a)
-  (UnorderedList a) -> ul_ (map renderListItem a)
+  (OrderedList _ a) -> ol_ (concatHtml (map renderBlock a))
+  (UnorderedList _ a) -> ul_ (concatHtml (map renderBlock a))
   (ListItem a) -> li_ (concatHtml (map renderBlock a))
+  (Text t) -> renderLine t
+  (Indented i) -> p_ (renderLine i)
   (CodeBlock l a) -> codeBlock_ l (escape (unlines (reverse a)))
   (QuoteBlock _ a) -> quote_ (concatHtml (map renderBlock a))
   HorizontalRule -> hr_
-
--- Somehow implement that indent to escape shit
-renderListItem :: Block -> Html
-renderListItem (Paragraph p) = li_ (renderLine p)
-renderListItem (UnorderedList ul) = ul_ (map renderListItem ul)
-renderListItem (OrderedList ol) = ol_ (map renderListItem ol)
-renderListItem block = li_ (renderBlock block)
 
 renderLine :: [Inline] -> Html
 renderLine = foldr ((<>) . renderInline) (escape "")
