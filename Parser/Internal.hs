@@ -46,7 +46,7 @@ renderBlock block = case block of
   HorizontalRule -> hr_
 
 renderLine :: [Inline] -> Html
-renderLine = foldr ((<>) . renderInline) (escape "")
+renderLine = foldr ((<>) . renderInline) (escape "\n")
 
 renderInline :: Inline -> Html
 renderInline i = case i of
@@ -87,7 +87,9 @@ parseLines (Just (UnorderedList d u)) (currentLine : rest) =
             if d < d1
               then
                 let (m, s) = parseLines (Just (UnorderedList d1 u1)) rest
-                 in parseLines (Just (UnorderedList d (m ++ u))) s
+                 in case u of
+                      (ListItem li : r) -> parseLines (Just (UnorderedList d (ListItem (li ++ m) : r))) s
+                      _ -> parseLines (Just (UnorderedList d (m ++ u))) s
               else ([UnorderedList d u], currentLine : rest)
       b -> let (m, s) = parseLines (Just b) rest in (UnorderedList d m : u, s)
 parseLines (Just (QuoteBlock d q)) (currentLine : rest) =
