@@ -18,6 +18,7 @@ module Html
     li_,
     attr,
     escape,
+    concatHtml,
   )
 where
 

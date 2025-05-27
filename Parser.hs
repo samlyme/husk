@@ -1,5 +1,8 @@
 module Parser
   ( parse,
+    Markdown,
+    Block (..),
+    Inline (..),
   )
 where
 
