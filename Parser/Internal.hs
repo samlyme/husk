@@ -2,6 +2,7 @@
 
 module Parser.Internal where
 
+import Data.Char (isDigit)
 import GHC.Natural (Natural)
 import Html.Internal (Html, bi_, br_, codeBlock_, code_, concatHtml, em_, escape, h_, hr_, li_, ol_, p_, quote_, strong_, ul_)
 
@@ -92,6 +93,22 @@ parseLines (Just (UnorderedList d u)) (currentLine : rest) =
                       _ -> parseLines (Just (UnorderedList d (m ++ u))) s
               else ([UnorderedList d u], currentLine : rest)
       b -> let (m, s) = parseLines (Just b) rest in (UnorderedList d m : u, s)
+parseLines (Just (OrderedList d u)) (currentLine : rest) =
+  if trim currentLine == ""
+    then let (m, s) = parseLines Nothing rest in (OrderedList d u : m, s)
+    else case parseLine currentLine of
+      (OrderedList d1 u1) ->
+        if d == d1
+          then parseLines (Just (OrderedList d (u1 ++ u))) rest
+          else
+            if d < d1
+              then
+                let (m, s) = parseLines (Just (OrderedList d1 u1)) rest
+                 in case u of
+                      (ListItem li : r) -> parseLines (Just (OrderedList d (ListItem (li ++ m) : r))) s
+                      _ -> parseLines (Just (OrderedList d (m ++ u))) s
+              else ([OrderedList d u], currentLine : rest)
+      b -> let (m, s) = parseLines (Just b) rest in (OrderedList d m : u, s)
 parseLines (Just (QuoteBlock d q)) (currentLine : rest) =
   if trim currentLine == ""
     then let (m, s) = parseLines Nothing rest in (QuoteBlock d q : m, s)
@@ -111,14 +128,24 @@ parseLines (Just a) ls =
    in (a : m, s)
 
 parseLine :: String -> Block
-parseLine s = case matchPrefixN 3 '`' s of
-  (Just l) -> CodeBlock l []
-  _ -> case s of
-    (' ' : rest) -> parseIndented 1 rest
-    ('-' : ' ' : rest) -> UnorderedList 1 [ListItem [Text (parseInline rest)]]
-    ('>' : rest) -> parseQuotes 1 (trim rest)
-    ('#' : rest) -> parseHeading 1 rest
-    _ -> parseParagraph s
+parseLine s =
+  case matchPrefixN 3 '`' s of
+    (Just l) -> CodeBlock l []
+    _ -> case s of
+      (' ' : rest) -> parseIndented 1 rest
+      ('-' : rest) ->
+        case parseUnorderedList 0 rest of
+          Just a -> a
+          Nothing -> Text (parseInline s)
+      ('>' : rest) -> parseQuotes 1 (trim rest)
+      ('#' : rest) -> parseHeading 1 rest
+      (c : rest) ->
+        if isDigit c
+          then case parseOrderedList 0 rest of
+            Just a -> a
+            Nothing -> parseParagraph s
+          else parseParagraph s
+      _ -> parseParagraph s
 
 parseIndented :: Natural -> String -> Block
 parseIndented d (' ' : s) = parseIndented (d + 1) s
@@ -126,11 +153,25 @@ parseIndented d ('-' : s) =
   case parseUnorderedList d s of
     Just a -> a
     Nothing -> Text (parseInline s)
+parseIndented d (c : rest) =
+  if isDigit c
+    then case parseOrderedList d rest of
+      Just a -> a
+      Nothing -> parseParagraph (c : rest)
+    else parseParagraph (c : rest)
 parseIndented _ s = Indented (parseInline s)
 
 parseUnorderedList :: Natural -> String -> Maybe Block
 parseUnorderedList d (' ' : s) = Just (UnorderedList d [ListItem [Text (parseInline s)]])
 parseUnorderedList _ _ = Nothing
+
+parseOrderedList :: Natural -> String -> Maybe Block
+parseOrderedList d ('.' : ' ' : s) = Just (OrderedList d [ListItem [Text (parseInline s)]])
+parseOrderedList d (c : s) =
+  if isDigit c
+    then parseOrderedList d s
+    else Nothing
+parseOrderedList _ _ = Nothing
 
 parseQuotes :: Natural -> String -> Block
 parseQuotes d ('>' : s) = parseQuotes (d + 1) (trim s)
