@@ -77,6 +77,10 @@ parseLines (Just (Paragraph p)) (currentLine : rest) =
     else case parseLine currentLine of
       (Paragraph l) -> parseLines (Just (Paragraph (p ++ [LineBreak] ++ l))) rest
       b -> let (m, s) = parseLines (Just b) rest in (Paragraph p : m, s)
+parseLines (Just (CodeBlock l c)) (currentLine : rest) =
+  case parseLine currentLine of
+    (CodeBlock _ _) -> let (m, s) = parseLines Nothing rest in (CodeBlock l c : m, s)
+    _ -> parseLines (Just (CodeBlock l (currentLine : c))) rest
 parseLines (Just (UnorderedList d u)) (currentLine : rest) =
   if trim currentLine == ""
     then let (m, s) = parseLines Nothing rest in (UnorderedList d u : m, s)
@@ -139,6 +143,7 @@ parseLine s =
           Nothing -> Text (parseInline s)
       ('>' : rest) -> parseQuotes 1 (trim rest)
       ('#' : rest) -> parseHeading 1 rest
+      ('`' : '`' : '`' : rest) -> CodeBlock rest []
       (c : rest) ->
         if isDigit c
           then case parseOrderedList 0 rest of
