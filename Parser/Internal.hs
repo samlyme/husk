@@ -36,8 +36,8 @@ renderBlock :: Block -> Html
 renderBlock block = case block of
   (Heading n a) -> h_ n (renderLine a)
   (Paragraph a) -> p_ (renderLine a)
-  (OrderedList _ a) -> ol_ (concatHtml (map renderBlock a))
-  (UnorderedList _ a) -> ul_ (concatHtml (map renderBlock a))
+  (OrderedList _ a) -> ol_ (concatHtml (map renderBlock (reverse a)))
+  (UnorderedList _ a) -> ul_ (concatHtml (map renderBlock (reverse a)))
   (ListItem a) -> li_ (concatHtml (map renderBlock a))
   (Text t) -> renderLine t
   (Indented i) -> p_ (renderLine i)
@@ -76,6 +76,20 @@ parseLines (Just (Paragraph p)) (currentLine : rest) =
     else case parseLine currentLine of
       (Paragraph l) -> parseLines (Just (Paragraph (p ++ [LineBreak] ++ l))) rest
       b -> let (m, s) = parseLines (Just b) rest in (Paragraph p : m, s)
+parseLines (Just (UnorderedList d u)) (currentLine : rest) =
+  if trim currentLine == ""
+    then let (m, s) = parseLines Nothing rest in (UnorderedList d u : m, s)
+    else case parseLine currentLine of
+      (UnorderedList d1 u1) ->
+        if d == d1
+          then parseLines (Just (UnorderedList d (u1 ++ u))) rest
+          else
+            if d < d1
+              then
+                let (m, s) = parseLines (Just (UnorderedList d1 u1)) rest
+                 in parseLines (Just (UnorderedList d (m ++ u))) s
+              else ([UnorderedList d u], currentLine : rest)
+      b -> let (m, s) = parseLines (Just b) rest in (UnorderedList d m : u, s)
 parseLines (Just (QuoteBlock d q)) (currentLine : rest) =
   if trim currentLine == ""
     then let (m, s) = parseLines Nothing rest in (QuoteBlock d q : m, s)
@@ -98,9 +112,16 @@ parseLine :: String -> Block
 parseLine s = case matchPrefixN 3 '`' s of
   (Just l) -> CodeBlock l []
   _ -> case s of
+    (' ' : rest) -> parseIndented 1 rest
+    ('-' : ' ' : rest) -> UnorderedList 1 [ListItem [Text (parseInline rest)]]
     ('>' : rest) -> parseQuotes 1 (trim rest)
     ('#' : rest) -> parseHeading 1 rest
     _ -> parseParagraph s
+
+parseIndented :: Natural -> String -> Block
+parseIndented d (' ' : s) = parseIndented (d + 1) s
+parseIndented d ('-' : ' ' : s) = UnorderedList d [ListItem [Text (parseInline s)]]
+parseIndented _ s = Indented (parseInline s)
 
 parseQuotes :: Natural -> String -> Block
 parseQuotes d ('>' : s) = parseQuotes (d + 1) (trim s)
