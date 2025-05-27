@@ -107,6 +107,8 @@ parseLine s =
   case matchPrefixN 3 '`' s of
     (Just l) -> CodeBlock l []
     _ -> case s of
+      ('`' : '`' : '`' : rest) -> CodeBlock rest []
+      ('-' : '-' : '-' : _) -> HorizontalRule
       (' ' : rest) -> parseIndented 1 rest
       ('-' : rest) ->
         case parseUnorderedList 0 rest of
@@ -114,7 +116,6 @@ parseLine s =
           Nothing -> Text (parseInline s)
       ('>' : rest) -> parseQuotes 1 (trim rest)
       ('#' : rest) -> parseHeading 1 rest
-      ('`' : '`' : '`' : rest) -> CodeBlock rest []
       (c : rest) ->
         if isDigit c
           then case parseOrderedList 0 rest of
