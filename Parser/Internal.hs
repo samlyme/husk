@@ -18,16 +18,12 @@ data Block
   | CodeBlock String [String]
   | QuoteBlock Natural [Block]
   | HorizontalRule
-  deriving (Show, Eq)
 
 data Inline
-  = Italic String
-  | Bold String
-  | ItalicBold String
-  | Code String
-  | Plain String
+  = Plain String
+  | Italic [Inline]
+  | Bold [Inline]
   | LineBreak
-  deriving (Show, Eq)
 
 parse :: String -> Markdown
 parse s = fst (parseLines Nothing (lines s))
@@ -113,7 +109,7 @@ parseLine s =
       ('-' : rest) ->
         case parseUnorderedList 0 rest of
           Just a -> a
-          Nothing -> Text (parseInline s)
+          Nothing -> Text (fst (parseInline (Plain "") s))
       ('>' : rest) -> parseQuotes 1 (trim rest)
       ('#' : rest) -> parseHeading 1 rest
       (c : rest) ->
@@ -123,6 +119,44 @@ parseLine s =
             Nothing -> parseParagraph s
           else parseParagraph s
       _ -> parseParagraph s
+
+parseInline :: Inline -> String -> ([Inline], String)
+parseInline a "" = ([a], "")
+parseInline LineBreak rest =
+  let (m, r) = parseInline (Plain "") rest
+   in (LineBreak : m, r)
+-- Currently Plain
+parseInline (Plain p) ('*' : '*' : rest) =
+  let (m, r) = parseInline (Bold []) rest
+   in (Plain p : m, r)
+parseInline (Plain p) ('*' : rest) =
+  let (m, r) = parseInline (Italic []) rest
+   in (Plain p : m, r)
+parseInline (Plain p) (c : rest) = parseInline (Plain (c : p)) rest
+-- Currently Bold
+parseInline (Bold b) ('*' : '*' : rest) =
+  let (m, r) = parseInline (Plain "") rest
+   in (Bold b : m, r)
+parseInline (Bold b) ('*' : rest) =
+  let (m, r) = parseInline (Italic []) rest
+   in ([Bold (b ++ m)], r)
+parseInline (Bold b) (c : rest) =
+  case b of
+    [] -> let nb = Bold [Plain [c]] in parseInline nb rest
+    (Plain p : r) -> let nb = Bold (Plain (c : p) : r) in parseInline nb rest
+    r -> let nb = Bold (Plain [c] : r) in parseInline nb rest
+-- Currently Italic
+parseInline (Italic i) ('*' : '*' : rest) =
+  let (m, r) = parseInline (Bold []) rest
+   in ([Italic (i ++ m)], r)
+parseInline (Italic i) ('*' : rest) =
+  let (m, r) = parseInline (Plain "") rest
+   in (Italic i : m, r)
+parseInline (Italic i) (c : rest) =
+  case i of
+    [] -> let ni = Italic [Plain [c]] in parseInline ni rest
+    (Plain p : r) -> let ni = Italic (Plain (c : p) : r) in parseInline ni rest
+    r -> let ni = Italic (Plain [c] : r) in parseInline ni rest
 
 parseIndented :: Natural -> String -> Block
 parseIndented d (' ' : s) = parseIndented (d + 1) s
@@ -168,51 +202,3 @@ matchPrefixN :: Int -> Char -> String -> Maybe String
 matchPrefixN n c s =
   let (prefix, rest) = span (== c) s
    in if length prefix == n then Just rest else Nothing
-
--- Entry point
-parseInline :: String -> [Inline]
-parseInline "" = []
-parseInline s
-  | "***" `isPrefixOf` s =
-      let (content, rest) = extractBetweenEsc "***" (drop 3 s)
-       in ItalicBold content : parseInline rest
-  | "**" `isPrefixOf` s =
-      let (content, rest) = extractBetweenEsc "**" (drop 2 s)
-       in Bold content : parseInline rest
-  | "*" `isPrefixOf` s =
-      let (content, rest) = extractBetweenEsc "*" (drop 1 s)
-       in Italic content : parseInline rest
-  | "`" `isPrefixOf` s =
-      let (content, rest) = extractBetweenEsc "`" (drop 1 s)
-       in Code content : parseInline rest
-  | otherwise =
-      let (plainText, rest) = spanUntilSpecialEsc s
-       in Plain plainText : parseInline rest
-
--- Extract text between delimiters with escape handling
-extractBetweenEsc :: String -> String -> (String, String)
-extractBetweenEsc delim = go ""
-  where
-    go acc [] = (acc, []) -- Unterminated case
-    go acc ('\\' : x : xs) = go (acc ++ [x]) xs -- Escaped character
-    go acc s@(c : cs)
-      | delim `isPrefixOf` s = (acc, drop (length delim) s)
-      | otherwise = go (acc ++ [c]) cs
-
--- Span plain text until unescaped formatting character
-spanUntilSpecialEsc :: String -> (String, String)
-spanUntilSpecialEsc = go ""
-  where
-    go acc [] = (acc, [])
-    go acc ('\\' : x : xs) = go (acc ++ [x]) xs -- Escaped character
-    go acc s@(c : _)
-      | isFormatStart s = (acc, s)
-      | otherwise = go (acc ++ [c]) (tail s)
-
--- Detect if the next unescaped characters begin a format marker
-isFormatStart :: String -> Bool
-isFormatStart s =
-  any (`isPrefixOf` s) ["***", "**", "*", "`"]
-
-isPrefixOf :: String -> String -> Bool
-isPrefixOf p s = take (length p) s == p

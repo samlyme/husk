@@ -8,7 +8,7 @@ import System.Process (readProcess)
 -- evil jank
 main :: IO ()
 main = do
-  raw <- readFile "content/post.md"
+  raw <- readFile "content/test.md"
   let ast = parse raw
   mapM_ print ast
   let page = html_ "my title" (render ast)

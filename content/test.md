@@ -42,3 +42,5 @@ Cons of Haskell:
 2. Cryptic Error Messages
 3. Dependency Hell in Some Ecosystems
 4. Smaller Community and Hiring Pool
+
+My favorite search engine is [Duck Duck Go](https://duckduckgo.com).
