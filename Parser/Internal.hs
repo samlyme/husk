@@ -122,8 +122,15 @@ parseLine s = case matchPrefixN 3 '`' s of
 
 parseIndented :: Natural -> String -> Block
 parseIndented d (' ' : s) = parseIndented (d + 1) s
-parseIndented d ('-' : ' ' : s) = UnorderedList d [ListItem [Text (parseInline s)]]
+parseIndented d ('-' : s) =
+  case parseUnorderedList d s of
+    Just a -> a
+    Nothing -> Text (parseInline s)
 parseIndented _ s = Indented (parseInline s)
+
+parseUnorderedList :: Natural -> String -> Maybe Block
+parseUnorderedList d (' ' : s) = Just (UnorderedList d [ListItem [Text (parseInline s)]])
+parseUnorderedList _ _ = Nothing
 
 parseQuotes :: Natural -> String -> Block
 parseQuotes d ('>' : s) = parseQuotes (d + 1) (trim s)
