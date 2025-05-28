@@ -15,7 +15,7 @@ instance Show Html where
 
 instance Semigroup Html where
   (<>) :: Html -> Html -> Html
-  (<>) a b = Html (show a <> show b)
+  (<>) a b = Html ('\n' : show a <> show b)
 
 type EscapedString = Html
 
