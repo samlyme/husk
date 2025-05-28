@@ -25,6 +25,11 @@ data Inline
   | Bold String
   | ItalicBold String
   | Code String
+  | Link String String
+  | ItalicLink String String
+  | BoldLink String String
+  | ItalicBoldLink String String
+  | Image String String
   | LineBreak
 
 instance Show Inline where
@@ -34,6 +39,11 @@ instance Show Inline where
   show (Bold text) = "(**" ++ reverse text ++ "**)"
   show (ItalicBold text) = "(***" ++ reverse text ++ "***)"
   show (Code text) = "`" ++ reverse text ++ "`"
+  show (Link title ref) = "[" ++ reverse title ++ "](" ++ reverse ref ++ ")"
+  show (ItalicLink title ref) = "*[" ++ reverse title ++ "](" ++ reverse ref ++ ")*"
+  show (BoldLink title ref) = "**[" ++ reverse title ++ "](" ++ reverse ref ++ ")**"
+  show (ItalicBoldLink title ref) = "***[" ++ reverse title ++ "](" ++ reverse ref ++ ")***"
+  show (Image alt src) = "![" ++ alt ++ "](" ++ src ++ ")"
   show LineBreak = "\n"
 
 parse :: String -> Markdown
@@ -134,12 +144,14 @@ parseLine s =
 parseInline :: String -> [Inline]
 parseInline = fst . parseInlineRec (Plain "")
 
+-- Implement this as a maybe, so if it fails, it doesn't nuke the rest of the doc
 parseCode :: Inline -> String -> (Inline, String)
 parseCode (Code co) "" = (Code co, "")
 parseCode (Code co) ('`' : rest) = (Code co, rest)
 parseCode (Code co) (c : rest) = parseCode (Code (c : co)) rest
 parseCode _ s = (Code "", s)
 
+-- Lord forgive me, for this code is a diabolical
 parseInlineRec :: Inline -> String -> ([Inline], String)
 parseInlineRec a "" = ([a], "")
 parseInlineRec a ('\\' : c : rest) =
@@ -149,6 +161,26 @@ parseInlineRec a ('\\' : c : rest) =
     (Bold t) -> parseInlineRec (Bold (c : t)) rest
     (ItalicBold t) -> parseInlineRec (ItalicBold (c : t)) rest
     (Code t) -> parseInlineRec (Code ('\\' : c : t)) rest
+    (Link title ref) ->
+      if ref == ""
+        then parseInlineRec (Link (c : title) ref) rest
+        else parseInlineRec (Link title ('\\' : c : ref)) rest
+    (ItalicLink title ref) ->
+      if ref == ""
+        then parseInlineRec (ItalicLink (c : title) ref) rest
+        else parseInlineRec (ItalicLink title ('\\' : c : ref)) rest
+    (BoldLink title ref) ->
+      if ref == ""
+        then parseInlineRec (BoldLink (c : title) ref) rest
+        else parseInlineRec (BoldLink title ('\\' : c : ref)) rest
+    (ItalicBoldLink title ref) ->
+      if ref == ""
+        then parseInlineRec (ItalicBoldLink (c : title) ref) rest
+        else parseInlineRec (ItalicBoldLink title ('\\' : c : ref)) rest
+    (Image alt src) ->
+      if src == ""
+        then parseInlineRec (Image (c : alt) src) rest
+        else parseInlineRec (Image alt ('\\' : c : src)) rest
     LineBreak -> parseInlineRec LineBreak (c : rest)
 parseInlineRec LineBreak rest =
   let (m, r) = parseInlineRec (Plain "") rest
@@ -159,6 +191,9 @@ parseInlineRec (Code co) s =
    in let (m, r) = parseInlineRec (Plain "") r1
        in (c : m, r)
 -- Currently Plain
+parseInlineRec (Plain p) ('[' : rest) =
+  let (m, r) = parseInlineRec (Link "" "") rest
+   in if p == "" then (m, r) else (Plain p : m, r)
 parseInlineRec (Plain p) ('`' : rest) =
   let (c, r1) = parseCode (Code "") rest
    in let (m, r) = parseInlineRec (Plain "") r1
@@ -171,6 +206,9 @@ parseInlineRec (Plain p) ('*' : rest) =
    in if p == "" then (m, r) else (Plain p : m, r)
 parseInlineRec (Plain p) (c : rest) = parseInlineRec (Plain (c : p)) rest
 -- Currently Bold
+parseInlineRec (Bold p) ('[' : rest) =
+  let (m, r) = parseInlineRec (BoldLink "" "") rest
+   in if p == "" then (m, r) else (Plain p : m, r)
 parseInlineRec (Bold b) ('`' : rest) =
   let (c, r1) = parseCode (Code "") rest
    in let (m, r) = parseInlineRec (Bold "") r1
@@ -183,6 +221,9 @@ parseInlineRec (Bold b) ('*' : rest) =
    in if b == "" then (m, r) else (Bold b : m, r)
 parseInlineRec (Bold b) (c : rest) = parseInlineRec (Bold (c : b)) rest
 -- Currently Italic
+parseInlineRec (Italic p) ('[' : rest) =
+  let (m, r) = parseInlineRec (ItalicLink "" "") rest
+   in if p == "" then (m, r) else (Plain p : m, r)
 parseInlineRec (Italic i) ('`' : rest) =
   let (c, r1) = parseCode (Code "") rest
    in let (m, r) = parseInlineRec (Italic "") r1
@@ -195,6 +236,9 @@ parseInlineRec (Italic i) ('*' : rest) =
    in if i == "" then (m, r) else (Italic i : m, r)
 parseInlineRec (Italic i) (c : rest) = parseInlineRec (Italic (c : i)) rest
 -- Currently ItalicBold
+parseInlineRec (ItalicBold p) ('[' : rest) =
+  let (m, r) = parseInlineRec (ItalicBoldLink "" "") rest
+   in if p == "" then (m, r) else (ItalicBold p : m, r)
 parseInlineRec (ItalicBold ib) ('`' : rest) =
   let (c, r1) = parseCode (Code "") rest
    in let (m, r) = parseInlineRec (ItalicBold "") r1
@@ -206,6 +250,40 @@ parseInlineRec (ItalicBold ib) ('*' : rest) =
   let (m, r) = parseInlineRec (Bold "") rest
    in if ib == "" then (m, r) else (ItalicBold ib : m, r)
 parseInlineRec (ItalicBold ib) (c : rest) = parseInlineRec (ItalicBold (c : ib)) rest
+parseInlineRec a ('!' : '[' : rest) =
+  let (m, r) = parseInlineRec (Image "" "") rest
+   in (a : m, r)
+parseInlineRec (Image alt "") (']' : '(' : c : rest) = parseInlineRec (Image alt [c]) rest
+parseInlineRec (Image alt "") (c : rest) = parseInlineRec (Image alt [c]) rest
+parseInlineRec (Image alt src) (')' : rest) =
+  let (m, r) = parseInlineRec (Plain "") rest
+   in (Image alt src : m, r)
+parseInlineRec (Image alt src) (c : rest) = parseInlineRec (Image alt (c : src)) rest
+-- Currently in link
+parseInlineRec (Link title "") (']' : '(' : r : rest) = parseInlineRec (Link title [r]) rest
+parseInlineRec (Link title "") (c : rest) = parseInlineRec (Link (c : title) "") rest
+parseInlineRec (Link title ref) (')' : rest) =
+  let (m, r) = parseInlineRec (Plain "") rest
+   in (Link title ref : m, r)
+parseInlineRec (Link title ref) (c : rest) = parseInlineRec (Link title (c : ref)) rest
+parseInlineRec (ItalicLink title "") (']' : '(' : r : rest) = parseInlineRec (ItalicLink title [r]) rest
+parseInlineRec (ItalicLink title "") (c : rest) = parseInlineRec (ItalicLink (c : title) "") rest
+parseInlineRec (ItalicLink title ref) (')' : rest) =
+  let (m, r) = parseInlineRec (Plain "") rest
+   in (ItalicLink title ref : m, r)
+parseInlineRec (ItalicLink title ref) (c : rest) = parseInlineRec (ItalicLink title (c : ref)) rest
+parseInlineRec (BoldLink title "") (']' : '(' : r : rest) = parseInlineRec (BoldLink title [r]) rest
+parseInlineRec (BoldLink title "") (c : rest) = parseInlineRec (BoldLink (c : title) "") rest
+parseInlineRec (BoldLink title ref) (')' : rest) =
+  let (m, r) = parseInlineRec (Plain "") rest
+   in (BoldLink title ref : m, r)
+parseInlineRec (BoldLink title ref) (c : rest) = parseInlineRec (BoldLink title (c : ref)) rest
+parseInlineRec (ItalicBoldLink title "") (']' : '(' : r : rest) = parseInlineRec (ItalicBoldLink title [r]) rest
+parseInlineRec (ItalicBoldLink title "") (c : rest) = parseInlineRec (ItalicBoldLink (c : title) "") rest
+parseInlineRec (ItalicBoldLink title ref) (')' : rest) =
+  let (m, r) = parseInlineRec (Plain "") rest
+   in (ItalicBoldLink title ref : m, r)
+parseInlineRec (ItalicBoldLink title ref) (c : rest) = parseInlineRec (ItalicBoldLink title (c : ref)) rest
 
 parseIndented :: Natural -> String -> Block
 parseIndented d (' ' : s) = parseIndented (d + 1) s

@@ -84,6 +84,12 @@ ul_ = el "ul"
 li_ :: Html -> Html
 li_ = el "li"
 
+a_ :: Html -> String -> Html
+a_ title ref = ela "a" [attr "href" ref] title
+
+img_ :: String -> String -> Html
+img_ alt src = iela "img" [attr "alt" alt, attr "src" src]
+
 el :: String -> Html -> Html
 el tag content =
   Html (ot tag <> show content <> ct tag)

@@ -29,4 +29,9 @@ renderInline i = case i of
   (ItalicBold s) -> bi_ (escape (reverse s))
   (Code s) -> code_ (escape (reverse s))
   (Plain s) -> escape (reverse s)
+  (Link title ref) -> a_ (escape (reverse title)) (reverse ref)
+  (ItalicLink title ref) -> a_ (em_ (escape (reverse title))) (reverse ref)
+  (BoldLink title ref) -> a_ (strong_ (escape (reverse title))) (reverse ref)
+  (ItalicBoldLink title ref) -> a_ (bi_ (escape (reverse title))) (reverse ref)
+  (Image alt src) -> img_ alt src
   LineBreak -> br_
