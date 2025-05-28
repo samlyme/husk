@@ -33,5 +33,5 @@ renderInline i = case i of
   (ItalicLink title ref) -> a_ (em_ (escape (reverse title))) (reverse ref)
   (BoldLink title ref) -> a_ (strong_ (escape (reverse title))) (reverse ref)
   (ItalicBoldLink title ref) -> a_ (bi_ (escape (reverse title))) (reverse ref)
-  (Image alt src) -> img_ alt src
+  (Image alt src) -> img_ (reverse alt) (reverse src)
   LineBreak -> br_

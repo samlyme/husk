@@ -185,6 +185,16 @@ parseInlineRec a ('\\' : c : rest) =
 parseInlineRec LineBreak rest =
   let (m, r) = parseInlineRec (Plain "") rest
    in (LineBreak : m, r)
+-- images
+parseInlineRec a ('!' : '[' : rest) =
+  let (m, r) = parseInlineRec (Image "" "") rest
+   in (a : m, r)
+parseInlineRec (Image alt "") (']' : '(' : c : rest) = parseInlineRec (Image alt [c]) rest
+parseInlineRec (Image alt "") (c : rest) = parseInlineRec (Image (c : alt) "") rest
+parseInlineRec (Image alt src) (')' : rest) =
+  let (m, r) = parseInlineRec (Plain "") rest
+   in (Image alt src : m, r)
+parseInlineRec (Image alt src) (c : rest) = parseInlineRec (Image alt (c : src)) rest
 -- Currently Code, shouldn't happen
 parseInlineRec (Code co) s =
   let (c, r1) = parseCode (Code co) s
@@ -250,15 +260,6 @@ parseInlineRec (ItalicBold ib) ('*' : rest) =
   let (m, r) = parseInlineRec (Bold "") rest
    in if ib == "" then (m, r) else (ItalicBold ib : m, r)
 parseInlineRec (ItalicBold ib) (c : rest) = parseInlineRec (ItalicBold (c : ib)) rest
-parseInlineRec a ('!' : '[' : rest) =
-  let (m, r) = parseInlineRec (Image "" "") rest
-   in (a : m, r)
-parseInlineRec (Image alt "") (']' : '(' : c : rest) = parseInlineRec (Image alt [c]) rest
-parseInlineRec (Image alt "") (c : rest) = parseInlineRec (Image alt [c]) rest
-parseInlineRec (Image alt src) (')' : rest) =
-  let (m, r) = parseInlineRec (Plain "") rest
-   in (Image alt src : m, r)
-parseInlineRec (Image alt src) (c : rest) = parseInlineRec (Image alt (c : src)) rest
 -- Currently in link
 parseInlineRec (Link title "") (']' : '(' : r : rest) = parseInlineRec (Link title [r]) rest
 parseInlineRec (Link title "") (c : rest) = parseInlineRec (Link (c : title) "") rest

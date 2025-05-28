@@ -54,4 +54,4 @@ Cons of Haskell:
 
 ***[Duck Duck Go](https://duckduckgo.com)***
 
-![The San Juan Mountains are beautiful!](/assets/images/san-juan-mountains.jpg)
+lmaoo ![The San Juan Mountains are beautiful!](https://external-preview.redd.it/vC0o6qZu4OlzXFzwQoTRltJ85JT0of4o2Zq5DUAa8wA.jpg?auto=webp&s=15b395e11d37dc36733eccd8f40a5530b502852b) ayy
