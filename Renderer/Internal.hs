@@ -24,9 +24,14 @@ renderLine = foldr ((<>) . renderInline) (escape "\n")
 
 renderInline :: Inline -> Html
 renderInline i = case i of
-  (Italic s) -> em_ (escape s)
-  (Bold s) -> strong_ (escape s)
-  (ItalicBold s) -> bi_ (escape s)
-  (Code s) -> code_ (escape s)
-  (Plain s) -> escape s
+  (Italic s) -> em_ (escape (reverse s))
+  (Bold s) -> strong_ (escape (reverse s))
+  (ItalicBold s) -> bi_ (escape (reverse s))
+  (Code s) -> code_ (escape (reverse s))
+  (Plain s) -> escape (reverse s)
+  (Link title ref) -> a_ (escape (reverse title)) (reverse ref)
+  (ItalicLink title ref) -> a_ (em_ (escape (reverse title))) (reverse ref)
+  (BoldLink title ref) -> a_ (strong_ (escape (reverse title))) (reverse ref)
+  (ItalicBoldLink title ref) -> a_ (bi_ (escape (reverse title))) (reverse ref)
+  (Image alt src) -> img_ (reverse alt) (reverse src)
   LineBreak -> br_

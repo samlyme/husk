@@ -10,7 +10,7 @@
   --code-text: #2d5b00;
   --border-color: #dddddd;
   --font-main: 'Georgia', serif;
-  --font-code: 'Fira Code', 'Courier New', serif;
+  --font-code: 'Fira Code', monospace;
 }
 
 * {

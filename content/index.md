@@ -17,7 +17,7 @@ With a line break.
 
 How about some **bold**? Or perhaps some *italics*? ***Both***?
 
-Maybe some inline `code`?
+Maybe some inline `co\de`?
 
 ```python
 # Python more your style?
@@ -28,6 +28,7 @@ print('Hello, World!')
 console.log('Hello, World!');
 ``` 
 ```java
+// Some java?
 System.out.println("Hello, World!");
 ```
 > "Haskell is the world's finest imperative language."
@@ -50,3 +51,7 @@ Cons of Haskell:
 4. Cryptic Error Messages
 5. Dependency Hell in Some Ecosystems
 6. Smaller Community and Hiring Pool
+
+***[Duck Duck Go](https://duckduckgo.com)***
+
+lmaoo ![The San Juan Mountains are beautiful!](https://external-preview.redd.it/vC0o6qZu4OlzXFzwQoTRltJ85JT0of4o2Zq5DUAa8wA.jpg?auto=webp&s=15b395e11d37dc36733eccd8f40a5530b502852b) ayy

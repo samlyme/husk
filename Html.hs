@@ -16,6 +16,8 @@ module Html
     ol_,
     ul_,
     li_,
+    a_,
+    img_,
     attr,
     escape,
     concatHtml,
