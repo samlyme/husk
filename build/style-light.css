@@ -6,7 +6,7 @@
   --accent-color: #5a32c2;
   --link-color: #005f99;
   --heading-color: #000000;
-  --code-bg: #f5f5f5;
+  --code-bg: #d8d8d880;
   --code-text: #2d5b00;
   --border-color: #dddddd;
   --font-main: 'Georgia', serif;
@@ -62,7 +62,7 @@ p {
 code, pre {
   font-family: var(--font-code);
   background-color: var(--code-bg);
-  color: var(--code-text);
+  /* color: var(--code-text); */
   padding: 0.2em 0.4em;
   border-radius: 4px;
 }
@@ -75,10 +75,10 @@ pre {
 
 blockquote {
   border-left: 4px solid var(--accent-color);
-  padding-left: 1em;
+  background-color: var(--code-bg);
+  padding: 0.2em 1em;
   color: #555;
   margin: 1.5rem 0;
-  font-style: italic;
 }
 
 ul, ol {
