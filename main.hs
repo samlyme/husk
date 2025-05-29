@@ -4,7 +4,6 @@ import Html
 import Parser (parse)
 import Renderer (render)
 
--- evil jank
 main :: IO ()
 main = do
   raw <- readFile "content/index.md"

@@ -1,5 +1,4 @@
 /* ===== Light Mode Blog Theme with Serif Fonts ===== */
-
 :root {
   --bg-color: #ffffff;
   --text-color: #222222;
@@ -11,6 +10,18 @@
   --border-color: #dddddd;
   --font-main: 'Georgia', serif;
   --font-code: 'Fira Code', monospace;
+}
+
+/* ===== Dark Mode Overrides ===== */
+body.dark-mode {
+  --bg-color: #121212;
+  --text-color: #dddddd;
+  --accent-color: #8f6eff;
+  --link-color: #4fa3ff;
+  --heading-color: #ffffff;
+  --code-bg: #2a2a2a;
+  --code-text: #c5f78b;
+  --border-color: #444444;
 }
 
 * {
@@ -61,7 +72,7 @@ p {
 
 code, pre {
   font-family: var(--font-code);
-  background-color: var(--code-bg);
+  /* background-color: var(--code-bg); */
   /* color: var(--code-text); */
   padding: 0.2em 0.4em;
   border-radius: 4px;
@@ -77,7 +88,7 @@ blockquote {
   border-left: 4px solid var(--accent-color);
   background-color: var(--code-bg);
   padding: 0.2em 1em;
-  color: #555;
+  /* color: #555; */
   margin: 1.5rem 0;
 }
 

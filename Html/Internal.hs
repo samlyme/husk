@@ -35,9 +35,9 @@ html_ title content =
               <> iela "meta" [attr "name" "viewport", attr "content" "width=device-width, initial-scale=1.0"]
               -- make an option to change light/dark theme and the code syntax theme
               <> iela "link" [attr "rel" "stylesheet", attr "href" "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/atom-one-dark.min.css"]
-              <> iela "link" [attr "rel" "stylesheet", attr "href" "./style-light.css"]
+              <> iela "link" [attr "rel" "stylesheet", attr "href" "./style.css"]
               <> ela "script" [attr "src" "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"] (escape "")
-              <> el "script" (Html "hljs.highlightAll();")
+              <> ela "script" [attr "src" "./index.js"] (escape "")
           )
           <> el "body" (el "main" content)
       )
