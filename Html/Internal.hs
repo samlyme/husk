@@ -35,9 +35,9 @@ html_ title content =
               <> iela "meta" [attr "name" "viewport", attr "content" "width=device-width, initial-scale=1.0"]
               -- make an option to change light/dark theme and the code syntax theme
               <> iela "link" [attr "rel" "stylesheet", attr "href" "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/atom-one-dark.min.css"]
-              <> iela "link" [attr "rel" "stylesheet", attr "href" "./style.css"]
+              <> iela "link" [attr "rel" "stylesheet", attr "href" "/style.css"]
               <> ela "script" [attr "src" "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"] (escape "")
-              <> ela "script" [attr "src" "./index.js"] (escape "")
+              <> ela "script" [attr "src" "/index.js"] (escape "")
           )
           <> el "body" (el "main" content)
       )
@@ -88,7 +88,7 @@ a_ :: Html -> String -> Html
 a_ title ref = ela "a" [attr "href" ref] title
 
 img_ :: String -> String -> Html
-img_ alt src = iela "img" [attr "alt" alt, attr "src" src]
+img_ alt src = iela "img" [attr "alt" alt, attr "src" src, attr "referrerpolicy" "no-referrer"]
 
 el :: String -> Html -> Html
 el tag content =
