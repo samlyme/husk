@@ -1,4 +1,4 @@
-module Html
+module Husk.Html
   ( Html,
     Title,
     Attribute,
@@ -24,4 +24,4 @@ module Html
   )
 where
 
-import Html.Internal
+import Husk.Html.Internal

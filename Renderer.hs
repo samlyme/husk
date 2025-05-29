@@ -1,6 +1,6 @@
-module Renderer
+module Husk.Renderer
   ( render,
   )
 where
 
-import Renderer.Internal
+import Husk.Renderer.Internal

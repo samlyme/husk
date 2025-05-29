@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 
-module Html.Internal where
+module Husk.Html.Internal where
 
 import GHC.Natural (Natural)
 

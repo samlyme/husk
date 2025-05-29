@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
 
-import Html
-import Parser (parse)
-import Renderer (render)
+import Husk.Html
+import Husk.Parser (parse)
+import Husk.Renderer (render)
 
 main :: IO ()
 main = do

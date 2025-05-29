@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall #-}
 
-module Parser.Internal where
+module Husk.Parser.Internal where
 
 import Data.Char (isDigit)
 import GHC.Natural (Natural)

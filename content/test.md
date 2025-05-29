@@ -1,1 +1,0 @@
-How about some **bold**? Or *`perhaps`* some *italics*? ***Both***? What ***some** nested* \**hey `lol` lmao*

@@ -1,4 +1,4 @@
-module Parser
+module Husk.Parser
   ( parse,
     Markdown,
     Block (..),
@@ -6,4 +6,4 @@ module Parser
   )
 where
 
-import Parser.Internal
+import Husk.Parser.Internal

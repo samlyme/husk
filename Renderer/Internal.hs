@@ -1,7 +1,7 @@
-module Renderer.Internal where
+module Husk.Renderer.Internal where
 
-import Html
-import Parser (Block (..), Inline (..), Markdown)
+import Husk.Html
+import Husk.Parser (Block (..), Inline (..), Markdown)
 
 render :: Markdown -> Html
 render = foldr ((<>) . renderBlock) (escape "")
